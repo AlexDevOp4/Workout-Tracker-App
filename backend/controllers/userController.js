@@ -51,6 +51,12 @@ export const createUser = async (req, res) => {
         username,
         password,
       });
+
+      await prisma.user.create({
+        clerkId: found.id,
+        email: email,
+        role: "CLIENT"
+      })
     } else {
       console.log("[CREATE] found Clerk user:", found.id);
     }
