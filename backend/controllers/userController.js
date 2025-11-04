@@ -33,55 +33,56 @@ export const getUserById = async (req, res) => {
 
 // POST /api/users/create
 export const createUser = async (req, res) => {
+  const emailRaw = req.body?.email;
+  if (!emailRaw) return res.status(400).json({ message: "email is required" });
+
+  const email = emailRaw.trim().toLowerCase();
+  const { username, password } = req.body;
+
+  let createdClerkUserId = null;
+
   try {
-    const emailRaw = req.body?.email;
-    if (!emailRaw)
-      return res.status(400).json({ message: "email is required" });
-    const email = emailRaw.trim().toLowerCase();
-    const { username, password } = req.body;
+    const list = await clerkClient.users.getUserList({ emailAddress: [email] });
+    let clerkUser = list.length ? list[0] : null;
 
-    let list = await clerkClient.users.getUserList({
-      emailAddress: [email],
-    });
-
-    let found = list.length ? list[0] : null;
-    if (!found) {
-      found = await clerkClient.users.createUser({
-        emailAddress: [email],
-        username,
-        password,
-      });
-
-      await prisma.user.create({
-        clerkId: found.id,
-        email: email,
-        role: "CLIENT"
-      })
-    } else {
-      console.log("[CREATE] found Clerk user:", found.id);
+    if (!clerkUser) {
+      clerkUser = await clerkClient.users.createUser({ emailAddress: [email], username, password });
+      createdClerkUserId = clerkUser.id;
     }
 
-    const primaryId = found.primaryEmailAddressId;
-    const primaryEntry =
-      (found.emailAddresses || []).find((e) => e.id === primaryId) ||
-      (found.emailAddresses || [])[0];
+    const primaryId = clerkUser.primaryEmailAddressId;
+    const primaryEntry = (clerkUser.emailAddresses || []).find(e => e.id === primaryId)
+      || (clerkUser.emailAddresses || [])[0];
     const clerkEmail = primaryEntry?.emailAddress || email;
 
     const prismaUser = await prisma.user.upsert({
-      where: { clerkId: found.id },
-      create: { clerkId: found.id, email: clerkEmail },
+      where: { clerkId: clerkUser.id },    
+      create: { clerkId: clerkUser.id, email: clerkEmail },
       update: { email: clerkEmail },
     });
 
     return res.status(201).json({
       user: prismaUser,
-      clerk: { id: found.id, email: clerkEmail, username: found.username },
+      clerk: { id: clerkUser.id, email: clerkEmail, username: clerkUser.username },
     });
+
   } catch (err) {
     console.error("[CREATE] ERROR:", err);
-    return res.status(500).json({ message: err.message || "Server error" });
+
+    if (createdClerkUserId) {
+      try {
+        await clerkClient.users.deleteUser(createdClerkUserId);
+        console.warn(`[CREATE] Rolled back Clerk user ${createdClerkUserId}`);
+      } catch (delErr) {
+        console.error(`[CREATE] Failed to rollback Clerk user ${createdClerkUserId}:`, delErr);
+      }
+    }
+
+    if (err.code === "P2002") return res.status(409).json({ message: "User already exists." });
+    return res.status(500).json({ message: "Server error." });
   }
 };
+
 
 
 
