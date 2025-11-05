@@ -1,6 +1,4 @@
-import { clerkClient } from "@clerk/express";
 import pkg from "@prisma/client";
-import { json } from "express";
 const { PrismaClient, Prisma } = pkg;
 
 export const prisma = new PrismaClient({

@@ -14,24 +14,105 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UpdatedBy {
+  TRAINER
+  CLIENT
+  SYSTEM
+}
+
 model User {
-  id            String          @id @default(uuid())
-  clerkId       String          @unique
-  email         String          @unique
-  role          String          @default("TRAINER")
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @default(now())
-  clientProfile ClientProfile?  @relation(name: "ClientUser")
+  id        String   @id @default(uuid())
+  clerkId   String   @unique
+  email     String   @unique
+  role      String   @default("TRAINER") 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clientProfile ClientProfile?  @relation("ClientUser")
   clients       ClientProfile[] @relation("TrainerUser")
+
+  programs Program[]
 }
 
 model ClientProfile {
-  id        String  @id @default(uuid())
-  user      User    @relation(name: "ClientUser", fields: [userId], references: [id])
-  userId    String  @unique
-  trainer   User    @relation(name: "TrainerUser", fields: [trainerId], references: [id])
-  trainerId String  @unique
-  name      String
-  notes     String?
-  archived  Boolean @default(false)
+  id     String @id @default(uuid())
+  user   User   @relation("ClientUser", fields: [userId], references: [id])
+  userId String @unique
+
+  trainer   User   @relation("TrainerUser", fields: [trainerId], references: [id])
+  trainerId String
+
+  name     String
+  notes    String?
+  archived Boolean @default(false)
+
+  programs Program[]
+}
+
+model Program {
+  id    String @id @default(uuid())
+  title String?
+
+  client   ClientProfile @relation(fields: [clientId], references: [id])
+  clientId String
+
+  trainer   User   @relation(fields: [trainerId], references: [id])
+  trainerId String
+
+  startDate DateTime @default(now())
+  status    String   @default("active") 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  weeks Week[]
+
+  @@index([clientId])
+  @@index([trainerId])
+}
+
+model Week {
+  id String @id @default(uuid())
+
+  program   Program @relation(fields: [programId], references: [id])
+  programId String
+
+  weekNumber Int      @default(1)
+  isDeload   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  rows Row[]
+  // If each program can have only one of each weekNumber, enforce:
+  // @@unique([programId, weekNumber])
+
+  @@index([programId, weekNumber])
+}
+
+model Row {
+  id String @id @default(uuid())
+
+  week   Week   @relation(fields: [weekId], references: [id])
+  weekId String
+
+  dayNumber Int
+
+  // Trainer fields
+  exercise      String
+  sets          Int
+  weightLbs     Int
+  targetRepsMin Int
+  targetRepsMax Int
+  rir           Int
+  restSec       Int
+
+  // Client fields
+  actualReps Int[]
+  notes      String? @db.Text
+
+  // Audit
+  updatedBy UpdatedBy @default(SYSTEM)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([weekId, dayNumber])
 }

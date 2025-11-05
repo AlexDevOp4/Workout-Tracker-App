@@ -37,7 +37,7 @@ export const createUser = async (req, res) => {
   if (!emailRaw) return res.status(400).json({ message: "email is required" });
 
   const email = emailRaw.trim().toLowerCase();
-  const { username, password } = req.body;
+  const { username, password, role } = req.body;
 
   let createdClerkUserId = null;
 
@@ -57,7 +57,7 @@ export const createUser = async (req, res) => {
 
     const prismaUser = await prisma.user.upsert({
       where: { clerkId: clerkUser.id },    
-      create: { clerkId: clerkUser.id, email: clerkEmail },
+      create: { clerkId: clerkUser.id, email: clerkEmail, role },
       update: { email: clerkEmail },
     });
 
