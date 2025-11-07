@@ -1,8 +1,7 @@
 import pkg from "@prisma/client";
-import { clerkClient } from '@clerk/express'
-const { PrismaClient, Prisma } = pkg;
+const { PrismaClient } = pkg;
 
-import { promise, z } from "zod";
+import { z } from "zod";
 import { DateTime } from "luxon";
 
 const prisma = new PrismaClient();
