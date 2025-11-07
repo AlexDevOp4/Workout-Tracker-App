@@ -1,9 +1,6 @@
 import pkg from "@prisma/client";
 const { PrismaClient } = pkg;
 
-import { z } from "zod";
-import { DateTime } from "luxon";
-
 const prisma = new PrismaClient();
 
 // POST /api/weeks/create

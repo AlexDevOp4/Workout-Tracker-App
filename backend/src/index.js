@@ -14,6 +14,7 @@ import clientRoutes from "../routes/clientRoutes.js";
 import userRoutes from "../routes/userRoutes.js";
 import programRoutes from '../routes/programRoutes.js'
 import weekRoutes from '../routes/weekRoutes.js'
+import rowRoutes from '../routes/rowRoutes.js'
 import pkg from "@prisma/client";
 const { PrismaClient, Prisma } = pkg;
 
@@ -63,7 +64,7 @@ app.use("/api/client", clientRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/programs", programRoutes)
 app.use("/api/weeks", weekRoutes)
-
+app.use("/api/rows", rowRoutes)
 // Start server
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
