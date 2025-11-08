@@ -163,3 +163,70 @@ export const softDeleteProgram = async (req, res) => {
     }
 
 }
+
+//POST /api/programs/:programId/weeks/:weekNumber/roll-forward
+// What it does:
+
+// Clones prior week’s rows into weekNumber + 1.
+
+// Applies simple progression:
+
+// If actualReps.length ≥ sets AND every actualReps[i] ≥ targetRepsMax → weightLbs += increment.
+
+// Else keep weight; optionally flag needsWork boolean.
+
+// increment rule: default +5 lb upper body, +10 lb lower(config per exercise category later).
+
+//     Acceptance:
+
+// Creates Week N + 1 atomically.
+
+// Copies all rows; adjusts weights where criteria met.
+
+// Idempotent guard: 409 if Week N + 1 already exists.
+
+export const rollForward = async (req, res) => {
+    let { programId, weekNumber } = req.params
+    const weekToNum = Number(weekNumber)
+
+    try {
+
+        const priorWeek = await prisma.program.findMany({
+            where: {
+                id: programId
+            },
+            include: {
+                weeks: {
+                    where: {
+                        weekNumber: weekToNum
+                    },
+                    include: {
+                        rows: true,
+                    }
+                }
+            }
+        })
+
+        const newWeek = {
+            weekNumber: priorWeek[0].weeks[0].weekNumber + 1
+        }
+
+        const rows = priorWeek[0].weeks[0].rows
+
+        const summary = rows.map(row => {
+            const metTarget = row.actualReps.every(rep => rep >= row.targetRepsMax);
+            return {
+                exercise: row.exercise,
+                weightLbs: metTarget && row.actualReps.length >= row.sets ? row.weightLbs + 5 : row.weightLbs
+            };
+        });
+
+
+        console.log(summary)
+
+        return res.status(200).json(priorWeek)
+
+    } catch (error) {
+        return res.status(500).json({ message: "Server error" + error });
+    }
+}

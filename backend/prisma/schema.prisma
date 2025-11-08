@@ -20,11 +20,16 @@ enum UpdatedBy {
   SYSTEM
 }
 
+enum ExerciseCategory {
+  UPPER
+  LOWER
+}
+
 model User {
   id        String   @id @default(uuid())
   clerkId   String   @unique
   email     String   @unique
-  role      String   @default("TRAINER") 
+  role      String   @default("TRAINER")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -50,7 +55,7 @@ model ClientProfile {
 }
 
 model Program {
-  id    String @id @default(uuid())
+  id    String  @id @default(uuid())
   title String?
 
   client   ClientProfile @relation(fields: [clientId], references: [id])
@@ -60,7 +65,7 @@ model Program {
   trainerId String
 
   startDate DateTime @default(now())
-  status    String   @default("active") 
+  status    String   @default("active")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -91,13 +96,13 @@ model Week {
 model Row {
   id String @id @default(uuid())
 
-  week   Week   @relation(fields: [weekId], references: [id])
-  weekId String
-
+  week      Week   @relation(fields: [weekId], references: [id])
+  weekId    String
   dayNumber Int
 
   // Trainer fields
-  exercise      String
+  exercise      Exercise @relation(fields: [exerciseId], references: [id])
+  exerciseId    String
   sets          Int
   weightLbs     Int
   targetRepsMin Int
@@ -115,4 +120,16 @@ model Row {
   updatedAt DateTime  @updatedAt
 
   @@index([weekId, dayNumber])
+  @@index([exerciseId])
+}
+
+model Exercise {
+  id        String           @id @default(uuid())
+  name      String           @unique
+  category  ExerciseCategory
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  rows      Row[]
+
+  @@index([name])
 }
