@@ -26,12 +26,12 @@ export const prisma = new PrismaClient({
 });
 // CORS config
 const corsOptions = {
-  origin: ["http://localhost:3000"],
+  origin: ["http://localhost:5173"],
   credentials: true,
 };
 
 const app = express();
-const PORT = process.env.PORT || 40000;
+const PORT = process.env.PORT || 4000;
 
 app.use(cors(corsOptions));
 app.use(express.json());
