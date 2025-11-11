@@ -165,63 +165,38 @@ export const softDeleteProgram = async (req, res) => {
 }
 
 //POST /api/programs/:programId/weeks/:weekNumber/roll-forward
-// What it does:
-
-// Clones prior week’s rows into weekNumber + 1.
-
-// Applies simple progression:
-
-// If actualReps.length ≥ sets AND every actualReps[i] ≥ targetRepsMax → weightLbs += increment.
-
-// Else keep weight; optionally flag needsWork boolean.
-
-// increment rule: default +5 lb upper body, +10 lb lower(config per exercise category later).
-
-//     Acceptance:
-
-// Creates Week N + 1 atomically.
-
-// Copies all rows; adjusts weights where criteria met.
-
-// Idempotent guard: 409 if Week N + 1 already exists.
-
 export const rollForward = async (req, res) => {
     let { programId, weekNumber } = req.params
     let weekToNumber = Number(weekNumber)
 
     try {
 
-        // 1) Load base week + rows
         const baseWeek = await prisma.week.findFirst({
             where: { programId, weekNumber: weekToNumber },
             include: {
                 rows: {
-                    include: { exercise: true }, // assumes relation `exercise`
-                    orderBy: { createdAt: 'asc' }, // stable order
+                    include: { exercise: true },
+                    orderBy: { createdAt: 'asc' },
                 },
             },
         });
 
         if (!baseWeek) return res.status(404).json({ error: { code: 'WEEK_NOT_FOUND', message: 'Base week not found' }, data: null });
 
-        // 2) Guard: next week must not exist
         const nextNumber = weekToNumber + 1;
         const existingNext = await prisma.week.findFirst({ where: { programId, weekNumber: nextNumber } });
         if (existingNext) return res.status(409).json({ error: { code: 'WEEK_EXISTS', message: `Week ${nextNumber} already exists` }, data: null });
 
-        // 3) Transaction
         await prisma.$transaction(async (tx) => {
-            // 3a) Create new week
+
             const newWeek = await tx.week.create({
                 data: { programId, weekNumber: nextNumber, isDeload: false },
             });
 
-            // 3b) Build new rows from base rows
             const newRows = baseWeek.rows.map((row) => {
-                // Decide increment by category each row
+
                 const increment = row.exercise.category === 'UPPER' ? 5 : 10;
 
-                // Did client hit top of range across all sets?
                 const allSetsLogged = Array.isArray(row.actualReps) && row.actualReps.length >= row.sets;
                 const hitTop = allSetsLogged && row.actualReps.every((r) => Number.isInteger(r) && r >= row.targetRepsMax);
 
@@ -237,21 +212,19 @@ export const rollForward = async (req, res) => {
                     targetRepsMax: row.targetRepsMax,
                     rir: row.rir,
                     restSec: row.restSec,
-                    actualReps: [],        // reset for the new week
-                    notes: null,           // or copy if you later add copyNotes
+                    actualReps: [],
+                    notes: null,
                     updatedBy: 'SYSTEM',
                 };
             });
 
             if (newRows.length === 0) {
-                throw new Error('NO_ROWS_TO_CLONE'); // fail the tx fast
+                throw new Error('NO_ROWS_TO_CLONE');
             }
 
-            // 3c) Insert all new rows
             await tx.row.createMany({ data: newRows });
         });
 
-        // 4) Respond
         return res.status(201).json({ data: { newWeekNumber: nextNumber, rowsCreated: baseWeek.rows.length }, error: null });
 
     } catch (error) {
