@@ -187,44 +187,72 @@ export const softDeleteProgram = async (req, res) => {
 
 export const rollForward = async (req, res) => {
     let { programId, weekNumber } = req.params
-    const weekToNum = Number(weekNumber)
+    let weekToNumber = Number(weekNumber)
 
     try {
 
-        const priorWeek = await prisma.program.findMany({
-            where: {
-                id: programId
-            },
+        // 1) Load base week + rows
+        const baseWeek = await prisma.week.findFirst({
+            where: { programId, weekNumber: weekToNumber },
             include: {
-                weeks: {
-                    where: {
-                        weekNumber: weekToNum
-                    },
-                    include: {
-                        rows: true,
-                    }
-                }
-            }
-        })
-
-        const newWeek = {
-            weekNumber: priorWeek[0].weeks[0].weekNumber + 1
-        }
-
-        const rows = priorWeek[0].weeks[0].rows
-
-        const summary = rows.map(row => {
-            const metTarget = row.actualReps.every(rep => rep >= row.targetRepsMax);
-            return {
-                exercise: row.exercise,
-                weightLbs: metTarget && row.actualReps.length >= row.sets ? row.weightLbs + 5 : row.weightLbs
-            };
+                rows: {
+                    include: { exercise: true }, // assumes relation `exercise`
+                    orderBy: { createdAt: 'asc' }, // stable order
+                },
+            },
         });
 
+        if (!baseWeek) return res.status(404).json({ error: { code: 'WEEK_NOT_FOUND', message: 'Base week not found' }, data: null });
 
-        console.log(summary)
+        // 2) Guard: next week must not exist
+        const nextNumber = weekToNumber + 1;
+        const existingNext = await prisma.week.findFirst({ where: { programId, weekNumber: nextNumber } });
+        if (existingNext) return res.status(409).json({ error: { code: 'WEEK_EXISTS', message: `Week ${nextNumber} already exists` }, data: null });
 
-        return res.status(200).json(priorWeek)
+        // 3) Transaction
+        await prisma.$transaction(async (tx) => {
+            // 3a) Create new week
+            const newWeek = await tx.week.create({
+                data: { programId, weekNumber: nextNumber, isDeload: false },
+            });
+
+            // 3b) Build new rows from base rows
+            const newRows = baseWeek.rows.map((row) => {
+                // Decide increment by category each row
+                const increment = row.exercise.category === 'UPPER' ? 5 : 10;
+
+                // Did client hit top of range across all sets?
+                const allSetsLogged = Array.isArray(row.actualReps) && row.actualReps.length >= row.sets;
+                const hitTop = allSetsLogged && row.actualReps.every((r) => Number.isInteger(r) && r >= row.targetRepsMax);
+
+                const nextWeight = hitTop ? row.weightLbs + increment : row.weightLbs;
+
+                return {
+                    weekId: newWeek.id,
+                    exerciseId: row.exerciseId,
+                    dayNumber: row.dayNumber,
+                    sets: row.sets,
+                    weightLbs: nextWeight,
+                    targetRepsMin: row.targetRepsMin,
+                    targetRepsMax: row.targetRepsMax,
+                    rir: row.rir,
+                    restSec: row.restSec,
+                    actualReps: [],        // reset for the new week
+                    notes: null,           // or copy if you later add copyNotes
+                    updatedBy: 'SYSTEM',
+                };
+            });
+
+            if (newRows.length === 0) {
+                throw new Error('NO_ROWS_TO_CLONE'); // fail the tx fast
+            }
+
+            // 3c) Insert all new rows
+            await tx.row.createMany({ data: newRows });
+        });
+
+        // 4) Respond
+        return res.status(201).json({ data: { newWeekNumber: nextNumber, rowsCreated: baseWeek.rows.length }, error: null });
 
     } catch (error) {
         return res.status(500).json({ message: "Server error" + error });

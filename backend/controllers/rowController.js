@@ -8,7 +8,7 @@ export const createRow = async (req, res) => {
     const {
         weekId,
         dayNumber,
-        exercise,
+        exerciseId,
         sets,
         weightLbs,
         targetRepsMin,
@@ -18,10 +18,8 @@ export const createRow = async (req, res) => {
         actualReps,
         notes
     } = req.body
-    // Rule: (weekId, dayNumber) can repeat (multiple exercises per day),
-    // but order is implicit by createdAt; if you want explicit order, add orderIndex.
 
-    const required = { weekId, dayNumber, exercise, sets, weightLbs, targetRepsMin, targetRepsMax, rir, restSec, actualReps };
+    const required = { weekId, dayNumber, exerciseId, sets, weightLbs, targetRepsMin, targetRepsMax, rir, restSec, actualReps };
 
     for (const [key, value] of Object.entries(required)) {
         if (value === undefined || value === null || value === "") {
@@ -30,12 +28,11 @@ export const createRow = async (req, res) => {
     }
 
     try {
-
         const row = await prisma.row.create({
             data: {
                 weekId,
                 dayNumber,
-                exercise,
+                exerciseId,
                 sets,
                 weightLbs,
                 targetRepsMin,
