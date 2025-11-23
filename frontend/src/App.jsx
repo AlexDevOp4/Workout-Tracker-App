@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import UsersPage from './pages/Users/UsersPage';
-// import ClientsPage from './pages/Clients/ClientsPage';
+import ClientsPage from './pages/Clients/ClientsPage';
 // import ProgramsPage from './pages/Programs/ProgramsPage';
 
 export default function App() {
@@ -13,8 +13,8 @@ export default function App() {
       </nav>
       <Routes>
         <Route path="/users" element={<UsersPage />} />
-        {/* <Route path="/clients" element={<ClientsPage />} />
-        <Route path="/programs" element={<ProgramsPage />} /> */}
+        <Route path="/clients" element={<ClientsPage />} />
+        {/* <Route path="/programs" element={<ProgramsPage />} /> */}
       </Routes>
     </BrowserRouter>
   );

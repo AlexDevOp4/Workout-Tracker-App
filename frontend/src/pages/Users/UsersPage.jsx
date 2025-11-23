@@ -14,6 +14,7 @@ export default function UsersPage() {
       try {
         const res = await getUsers();
         setUsers(res.users || []); // fallback to empty array if undefined
+        console.log(res.users)
       } catch (error) {
         console.error('Failed to fetch users:', error);
       } finally {
@@ -27,7 +28,7 @@ export default function UsersPage() {
     e.preventDefault();
     try {
       const newUser = await createUser({ email, role, username, password });
-      setUsers((prev) => [...prev, newUser.users]);
+      setUsers((prev) => [...prev, newUser.user]);
       setEmail('');
       setUserName('');
       setPassword('');
@@ -90,7 +91,7 @@ export default function UsersPage() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition"
+            className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition"
           >
             Add User
           </button>

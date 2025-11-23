@@ -33,16 +33,20 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  clientProfile ClientProfile?  @relation("ClientUser")
-  clients       ClientProfile[] @relation("TrainerUser")
-
-  programs Program[]
+  clientProfiles ClientProfile[] @relation("ClientUser")
+  clients        ClientProfile[] @relation("TrainerUser")
+  programs       Program[]
 }
 
 model ClientProfile {
-  id     String @id @default(uuid())
+  id String @id @default(uuid())
+
+  // required: back-ref for Program.client
+  programs Program[]
+
+  // required relations you already had
   user   User   @relation("ClientUser", fields: [userId], references: [id])
-  userId String @unique
+  userId String
 
   trainer   User   @relation("TrainerUser", fields: [trainerId], references: [id])
   trainerId String
@@ -51,16 +55,18 @@ model ClientProfile {
   notes    String?
   archived Boolean @default(false)
 
-  programs Program[]
+  @@index([userId])
 }
 
 model Program {
   id    String  @id @default(uuid())
   title String?
 
+  // Program belongs to one ClientProfile
   client   ClientProfile @relation(fields: [clientId], references: [id])
   clientId String
 
+  // Program belongs to one TRAINER (User)
   trainer   User   @relation(fields: [trainerId], references: [id])
   trainerId String
 
