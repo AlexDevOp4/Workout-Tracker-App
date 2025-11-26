@@ -1,9 +1,11 @@
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getClients, createClient } from "../../api/clients";
 import { getUsers } from "../../api/users";
 
 export default function ClientsPage() {
   const [clients, setClients] = useState([]);
+  const [trainers, setTrainers] = useState([]);
   const [clientNames, setClientNames] = useState({});
   const [users, setUsers] = useState([]);
   const [name, setName] = useState("");
@@ -15,7 +17,23 @@ export default function ClientsPage() {
       const users = res.users;
 
       const clientsList = users.filter((r) => r.role === "CLIENT");
+      const trainerlist = users.filter((user) => user.role === "TRAINER");
       setClients(clientsList);
+      setTrainers(trainerlist);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchTrainersClients = async (trainerList) => {
+    try {
+      const trainersClients = await getClients(trainerList.id);
+
+      console.log(trainersClients);
+
+      return trainersClients;
     } catch (error) {
       console.error("Failed to fetch users:", error);
     } finally {
@@ -52,7 +70,7 @@ export default function ClientsPage() {
   const addClientToTrainersProfile = async (id, names) => {
     const data = {
       name: names,
-      trainerId: "c0d69848-31b4-4e28-a0cf-d20827ba8a98",
+      trainerId: "4e441a71-4599-49bf-94e0-ff3dd17f4252",
     };
     try {
       console.log(id, names);
@@ -80,6 +98,38 @@ export default function ClientsPage() {
     <div className="text-lg bold">No clients</div>
   ) : (
     <div>
+      <div className="min-h-screen flex flex-col">
+        {/* Upper Section */}
+        <section className="flex-1 bg-gray-900 text-white p-6 flex items-center justify-center">
+          <div className="max-w-xl w-full">
+            <h1 className="text-2xl font-bold">Upper Section</h1>
+            <p className="mt-2 text-sm">
+              Content goes here. This area automatically scales for mobile.
+            </p>
+          </div>
+        </section>
+
+        {/* Lower Section */}
+        <section className="flex-1 bg-gray-100 p-6 flex items-center justify-center">
+          <div className="max-w-xl w-full">
+            <ul className="list bg-base-100 rounded-box shadow-md">
+              <li className="p-4 pb-2 text-xs opacity-60 tracking-wide">
+                Trainers
+              </li>
+
+              {trainers.map((trainer) => (
+                <li className="list-row" key={trainer.id}>
+                  <div>
+                    <Link key={trainer.id} to={`/trainer/${trainer.id}`}>
+                      {trainer.email}
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      </div>
       <ul role="list" className="divide-y divide-gray-100">
         {clients.map((client) => (
           <li

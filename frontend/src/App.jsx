@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import UsersPage from './pages/Users/UsersPage';
 import ClientsPage from './pages/Clients/ClientsPage';
+import TrainerPage from './pages/Trainer/TrainerPage';
 // import ProgramsPage from './pages/Programs/ProgramsPage';
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
       <Routes>
         <Route path="/users" element={<UsersPage />} />
         <Route path="/clients" element={<ClientsPage />} />
+        <Route path='/trainer/:id' element={<TrainerPage/>}/>
         {/* <Route path="/programs" element={<ProgramsPage />} /> */}
       </Routes>
     </BrowserRouter>
