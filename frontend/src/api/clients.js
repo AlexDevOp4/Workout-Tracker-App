@@ -2,6 +2,10 @@ import { api } from "./client";
 
 export const getClients = async (trainerId) =>
   (await api.get("/api/client", { params: { trainerId } })).data;
+export const getClientsUsers = async (clerkId) =>
+  (await api.get(`/api/client/user/${clerkId}`)).data;
+export const getAllClients = async () =>
+  (await api.get("/api/client/all")).data;
 export const getClient = async (id) =>
   (await api.get(`/api/client/${id}`)).data;
 export const createClient = async (id, body) =>

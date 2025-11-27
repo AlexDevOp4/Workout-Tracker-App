@@ -1,5 +1,5 @@
 import pkg from "@prisma/client";
-import { clerkClient } from '@clerk/express'
+import { clerkClient } from "@clerk/express";
 const { PrismaClient, Prisma } = pkg;
 
 const prisma = new PrismaClient();
@@ -10,7 +10,69 @@ export const getUsers = async (req, res) => {
     const allUsers = await prisma.user.findMany();
     const users = await clerkClient.users.getUserList();
 
-    return res.status(200).json({ "users": allUsers, "clerk_users": users });
+    return res.status(200).json({ users: allUsers, clerk_users: users });
+  } catch (error) {
+    return res.status(404).json({ error: "Error fetching users " + error });
+  }
+};
+
+// GET /api/users/:clerkId
+export const getUserByClerkId = async (req, res) => {
+  const { clerkId } = req.params;
+  try {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { clerkId },
+    });
+    const fullUser = await prisma.user.findUniqueOrThrow({
+      where: {
+        clerkId,
+      },
+      include: {
+        clientProfile: user.role === "CLIENT",
+        trainerProfile: user.role === "TRAINER",
+      },
+    });
+
+    return res.status(200).json([fullUser]);
+  } catch (error) {
+    return res.status(404).json({ error: "Error fetching users " + error });
+  }
+};
+
+export const getClientUsers = async (req, res) => {
+  try {
+    const clients = await prisma.user.findMany({
+      where: {
+        role: "CLIENT",
+      },
+      include: {
+        clientProfile: true,
+      },
+    });
+
+    return res.status(200).json({ clients });
+  } catch (error) {
+    return res.status(404).json({ error: "Error fetching users " + error });
+  }
+};
+
+export const getTrainers = async (req, res) => {
+  try {
+    const trainers = await prisma.user.findMany({
+      where: {
+        role: "TRAINER",
+      },
+      include: {
+        trainerProfile: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    return res.status(200).json({ trainers });
   } catch (error) {
     return res.status(404).json({ error: "Error fetching users " + error });
   }
@@ -37,7 +99,7 @@ export const createUser = async (req, res) => {
   if (!emailRaw) return res.status(400).json({ message: "email is required" });
 
   const email = emailRaw.trim().toLowerCase();
-  const { username, password, role } = req.body;
+  const { username, password, role, firstName, lastName } = req.body;
 
   let createdClerkUserId = null;
 
@@ -46,26 +108,49 @@ export const createUser = async (req, res) => {
     let clerkUser = list.length ? list[0] : null;
 
     if (!clerkUser) {
-      clerkUser = await clerkClient.users.createUser({ emailAddress: [email], username, password });
+      clerkUser = await clerkClient.users.createUser({
+        emailAddress: [email],
+        username,
+        password,
+      });
       createdClerkUserId = clerkUser.id;
     }
 
     const primaryId = clerkUser.primaryEmailAddressId;
-    const primaryEntry = (clerkUser.emailAddresses || []).find(e => e.id === primaryId)
-      || (clerkUser.emailAddresses || [])[0];
+    const primaryEntry =
+      (clerkUser.emailAddresses || []).find((e) => e.id === primaryId) ||
+      (clerkUser.emailAddresses || [])[0];
     const clerkEmail = primaryEntry?.emailAddress || email;
 
     const prismaUser = await prisma.user.upsert({
-      where: { clerkId: clerkUser.id },    
+      where: { clerkId: clerkUser.id },
       create: { clerkId: clerkUser.id, email: clerkEmail, role },
       update: { email: clerkEmail },
     });
+    let userProfile;
+
+    if (role === "TRAINER") {
+      userProfile = await prisma.trainerProfile.create({
+        data: {
+          userId: prismaUser.id,
+          firstName,
+          lastName,
+        },
+      });
+    }
 
     return res.status(201).json({
       user: prismaUser,
-      clerk: { id: clerkUser.id, email: clerkEmail, username: clerkUser.username },
+      userProfile: {
+        role: prismaUser.role,
+        data: userProfile,
+      },
+      clerk: {
+        id: clerkUser.id,
+        email: clerkEmail,
+        username: clerkUser.username,
+      },
     });
-
   } catch (err) {
     console.error("[CREATE] ERROR:", err);
 
@@ -74,17 +159,18 @@ export const createUser = async (req, res) => {
         await clerkClient.users.deleteUser(createdClerkUserId);
         console.warn(`[CREATE] Rolled back Clerk user ${createdClerkUserId}`);
       } catch (delErr) {
-        console.error(`[CREATE] Failed to rollback Clerk user ${createdClerkUserId}:`, delErr);
+        console.error(
+          `[CREATE] Failed to rollback Clerk user ${createdClerkUserId}:`,
+          delErr
+        );
       }
     }
 
-    if (err.code === "P2002") return res.status(409).json({ message: "User already exists." });
+    if (err.code === "P2002")
+      return res.status(409).json({ message: "User already exists." });
     return res.status(500).json({ message: "Server error." });
   }
 };
-
-
-
 
 // PATCH /users/:id
 export const updateUserById = async (req, res) => {
@@ -104,8 +190,8 @@ export const updateUserById = async (req, res) => {
         userId: req.params.id,
         emailAddress: req.body.email,
         verified: true,
-        primary: true
-      })
+        primary: true,
+      });
     }
 
     const payload = {};
@@ -139,10 +225,9 @@ export const updateUserById = async (req, res) => {
   }
 };
 
-
 // DELETE /api/users/:id
 export const deleteUserById = async (req, res) => {
-  const clerkId = req.params.id
+  const clerkId = req.params.id;
 
   try {
     await clerkClient.users.deleteUser(clerkId);
@@ -155,7 +240,7 @@ export const deleteUserById = async (req, res) => {
 
     return res.status(200).json({ message: "User deleted" });
   } catch (error) {
-    console.error('Error deleting user:', error);
+    console.error("Error deleting user:", error);
     return res.status(500).json({ message: "Error deleting user:" + error });
   }
-}
+};

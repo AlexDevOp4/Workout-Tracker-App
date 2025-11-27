@@ -14,6 +14,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  TRAINER
+  CLIENT
+}
+
 enum UpdatedBy {
   TRAINER
   CLIENT
@@ -29,33 +34,65 @@ model User {
   id        String   @id @default(uuid())
   clerkId   String   @unique
   email     String   @unique
-  role      String   @default("TRAINER")
+  role      Role     @default(TRAINER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  clientProfiles ClientProfile[] @relation("ClientUser")
-  clients        ClientProfile[] @relation("TrainerUser")
-  programs       Program[]
+  // If this user is a client, they have exactly one ClientProfile
+  clientProfile ClientProfile? @relation("ClientUser")
+
+  // If this user is a trainer, they have exactly one TrainerProfile
+  trainerProfile TrainerProfile? @relation("TrainerProfileUser")
+
+  // If this user is a trainer, these are the clients they own
+  clients ClientProfile[] @relation("TrainerUser")
+
+  // Programs this user owns as trainer
+  programs Program[]
+}
+
+model TrainerProfile {
+  id String @id @default(uuid())
+
+  // The trainer user account
+  user   User   @relation("TrainerProfileUser", fields: [userId], references: [id])
+  userId String @unique
+
+  firstName String
+  lastName  String
+  bio       String?
+  archived  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model ClientProfile {
   id String @id @default(uuid())
 
-  // required: back-ref for Program.client
-  programs Program[]
-
-  // required relations you already had
+  // The client user account
   user   User   @relation("ClientUser", fields: [userId], references: [id])
-  userId String
+  userId String @unique
 
+  // The trainer (User) that owns this client
   trainer   User   @relation("TrainerUser", fields: [trainerId], references: [id])
   trainerId String
 
-  name     String
-  notes    String?
-  archived Boolean @default(false)
+  firstName String
+  lastName  String
+  notes     String?
+  archived  Boolean @default(false)
+
+  // All programs for this client
+  programs Program[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([trainerId])
 }
 
 model Program {

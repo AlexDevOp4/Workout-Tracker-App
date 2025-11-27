@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
-import { getUsers, createUser } from '../../api/users';
+import { useEffect, useState } from "react";
+import { getUsers, createUser } from "../../api/users";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState('TRAINER');
-  const [username, setUserName] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("TRAINER");
+  const [username, setUserName] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -14,9 +16,9 @@ export default function UsersPage() {
       try {
         const res = await getUsers();
         setUsers(res.users || []); // fallback to empty array if undefined
-        console.log(res.users)
+        console.log(res.users);
       } catch (error) {
-        console.error('Failed to fetch users:', error);
+        console.error("Failed to fetch users:", error);
       } finally {
         setIsLoading(false);
       }
@@ -27,13 +29,20 @@ export default function UsersPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     try {
-      const newUser = await createUser({ email, role, username, password });
+      const newUser = await createUser({
+        email,
+        role,
+        username,
+        password,
+        firstName,
+        lastName,
+      });
       setUsers((prev) => [...prev, newUser.user]);
-      setEmail('');
-      setUserName('');
-      setPassword('');
+      setEmail("");
+      setUserName("");
+      setPassword("");
     } catch (error) {
-      console.error('Failed to create user:', error);
+      console.error("Failed to create user:", error);
     }
   }
 
@@ -53,6 +62,24 @@ export default function UsersPage() {
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            placeholder="First Name"
+            required
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:outline-none"
+          />
+
+          <input
+            type="text"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            placeholder="Last Name"
+            required
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:outline-none"
+          />
+
           <input
             type="email"
             value={email}

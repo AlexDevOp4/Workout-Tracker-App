@@ -1,12 +1,17 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { getClients, createClient } from "../../api/clients";
-import { getUsers } from "../../api/users";
+import { getClients, createClient, getAllClients } from "../../api/clients";
+import { getTrainers, getUsers } from "../../api/users";
 
 export default function ClientsPage() {
   const [clients, setClients] = useState([]);
+  const [availableClients, setAvailableClients] = useState([]);
   const [trainers, setTrainers] = useState([]);
+  const [trainerId, setTrainerId] = useState("");
+  const [trainerName, setTrainerName] = useState("Select a Trainer: ");
+  const [trainer, setTrainer] = useState([]);
   const [clientNames, setClientNames] = useState({});
+  const [clientList, setClientList] = useState([]);
   const [users, setUsers] = useState([]);
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -14,26 +19,38 @@ export default function ClientsPage() {
   const fetchUsers = async () => {
     try {
       const res = await getUsers();
+      const clients = await getAllClients();
+      console.log(clients, "clients");
+      const filteredClients = clients.filter(
+        (c) => !c.archived && c.trainerId === null
+      );
+      setClientList(filteredClients);
       const users = res.users;
+      const clientsFiltered = users.filter((r) => r.role === "CLIENT");
+      const intersectionClients = clients.filter(x => !clientsFiltered.includes(x.userId))
+      console.log(intersectionClients, 'inter')
+      setAvailableClients(clientsFiltered);
+
+
+      const trainerData = await getTrainers();
+      console.log(trainerData.trainers, "data");
+      const mappedTrainerData = trainerData.trainers.map((x) => {
+        return {
+          id: x.id,
+          firstName: x.trainerProfile["firstName"],
+          lastName: x.trainerProfile["lastName"],
+          email: x.email,
+        };
+      });
+
+      console.log(typeof mappedTrainerData);
+      setTrainer(mappedTrainerData);
 
       const clientsList = users.filter((r) => r.role === "CLIENT");
+      console.log(clientList, "client");
       const trainerlist = users.filter((user) => user.role === "TRAINER");
       setClients(clientsList);
       setTrainers(trainerlist);
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchTrainersClients = async (trainerList) => {
-    try {
-      const trainersClients = await getClients(trainerList.id);
-
-      console.log(trainersClients);
-
-      return trainersClients;
     } catch (error) {
       console.error("Failed to fetch users:", error);
     } finally {
@@ -100,12 +117,74 @@ export default function ClientsPage() {
     <div>
       <div className="min-h-screen flex flex-col">
         {/* Upper Section */}
-        <section className="flex-1 bg-gray-900 text-white p-6 flex items-center justify-center">
+        <section className="flex-1 bg-gray-900 p-6 flex items-center justify-center">
           <div className="max-w-xl w-full">
-            <h1 className="text-2xl font-bold">Upper Section</h1>
-            <p className="mt-2 text-sm">
-              Content goes here. This area automatically scales for mobile.
-            </p>
+            <div className="dropdown">
+              <div tabIndex={0} role="button" className="btn m-1">
+                {trainerName}
+              </div>
+              <ul
+                tabIndex="-1"
+                className="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
+              >
+                {trainer.map((t) => (
+                  <li key={t.id}>
+                    <button
+                      onClick={() => {
+                        setTrainerName(`${t.firstName} ${t.lastName}`);
+                        setTrainerId(`${t.id}`);
+                      }}
+                    >
+                      {t.firstName} {t.lastName}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <ul className="list bg-base-100 rounded-box shadow-md">
+              <li className="p-4 pb-2 text-xs opacity-60 tracking-wide">
+                Clients for this trainer
+              </li>
+
+              {availableClients.map((client) => (
+                <li className="list-row" key={client.id}>
+                  <div>
+                    <Link key={client.id} to={`/client/${client.id}`}>
+                      {client.email}
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <div className="max-w-xl w-full mt-4">
+              <ul className="list bg-base-100 rounded-box shadow-md">
+                <li className="p-4 pb-2 text-xs opacity-60 tracking-wide">
+                  Available clients to assign
+                </li>
+
+                {availableClients.length === 0 ? (
+                  <li className="list-row">
+                    <div>No available Clients</div>
+                  </li>
+                ) : (
+                  availableClients.map((client) => (
+                    <li className="list-row" key={client.id}>
+                      <div>
+                        <Link
+                          className="text-black"
+                          key={client.id}
+                          to={`/client/${client.clerkId}/trainer/${trainerId}`}
+                        >
+                          {client.email}
+                        </Link>
+                      </div>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
           </div>
         </section>
 
@@ -114,65 +193,32 @@ export default function ClientsPage() {
           <div className="max-w-xl w-full">
             <ul className="list bg-base-100 rounded-box shadow-md">
               <li className="p-4 pb-2 text-xs opacity-60 tracking-wide">
-                Trainers
+                Clients
               </li>
 
-              {trainers.map((trainer) => (
-                <li className="list-row" key={trainer.id}>
-                  <div>
-                    <Link key={trainer.id} to={`/trainer/${trainer.id}`}>
-                      {trainer.email}
-                    </Link>
-                  </div>
+              {clients.length === 0 ? (
+                <li className="list-row">
+                  <div>No available Clients</div>
                 </li>
-              ))}
+              ) : (
+                clients.map((client) => (
+                  <li className="list-row" key={client.id}>
+                    <div>
+                      <Link
+                        className="text-black"
+                        key={client.id}
+                        to={`/client/${client.id}`}
+                      >
+                        {client.email}
+                      </Link>
+                    </div>
+                  </li>
+                ))
+              )}
             </ul>
           </div>
         </section>
       </div>
-      <ul role="list" className="divide-y divide-gray-100">
-        {clients.map((client) => (
-          <li
-            key={client.id}
-            className="flex items-center justify-between gap-x-6 py-5"
-          >
-            <div className="min-w-0">
-              <div className="flex items-start gap-x-3">
-                <p className="text-sm/6 font-semibold text-gray-900">
-                  {client.email}
-                </p>
-                <p>{client.trainerId || "No trainer assigned"}</p>
-              </div>
-              <div className="mt-1 flex items-center gap-x-2 text-xs/5 text-gray-500">
-                <p className="whitespace-nowrap">
-                  <input
-                    type="text"
-                    value={clientNames[client.id] || ""}
-                    onChange={(e) =>
-                      handleNameChange(client.id, e.target.value)
-                    }
-                    placeholder="Name"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  />
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-none items-center gap-x-4">
-              <button
-                onClick={() =>
-                  addClientToTrainersProfile(
-                    client.clerkId,
-                    clientNames[client.id]
-                  )
-                }
-                className="hidden rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-xs inset-ring inset-ring-gray-300 hover:bg-gray-50 sm:block"
-              >
-                Add Client<span className="sr-only">, {client.clerkId}</span>
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
