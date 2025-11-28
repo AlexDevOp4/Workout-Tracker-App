@@ -8,14 +8,26 @@ import ClientPage from './pages/Client/ClientPage';
 export default function App() {
   return (
     <BrowserRouter>
-      <nav className="p-4 border-b">
-        <Link to="/users">Users</Link> | <Link to="/clients">Clients</Link> |{" "}
-        <Link to="/programs">Programs</Link>
+      <nav className="navbar bg-base-100 shadow-sm flex flex-row">
+        <Link className="btn btn-ghost text-xl" to="/users">
+          Users
+        </Link>{" "}
+        |{" "}
+        <Link className="btn btn-ghost text-xl" to="/clients">
+          Clients
+        </Link>{" "}
+        |{" "}
+        <Link className="btn btn-ghost text-xl" to="/programs">
+          Programs
+        </Link>
       </nav>
       <Routes>
         <Route path="/users" element={<UsersPage />} />
         <Route path="/clients" element={<ClientsPage />} />
-        <Route path="/client/:clientId/trainer/:trainerId" element={<ClientPage />} />
+        <Route
+          path="/client/:clientId/trainer/:trainerId"
+          element={<ClientPage />}
+        />
         <Route path="/trainer/:id" element={<TrainerPage />} />
         {/* <Route path="/programs" element={<ProgramsPage />} /> */}
       </Routes>

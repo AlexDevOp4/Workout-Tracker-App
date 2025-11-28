@@ -1,4 +1,4 @@
-import {  useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { FaPenToSquare } from "react-icons/fa6";
 import { FaTrashCan } from "react-icons/fa6";
@@ -14,6 +14,7 @@ export default function ClientPage() {
   const [clientProfileData, setClientProfileData] = useState([]);
   const [archived, setArchived] = useState();
   const [modalType, setModalType] = useState(null);
+  const [hasClientProfile, setHasClientProfile] = useState(false);
 
   const openEditModal = () => setModalType("edit");
   const openDeleteModal = () => setModalType("delete");
@@ -25,9 +26,14 @@ export default function ClientPage() {
   const fetchUsers = async () => {
     try {
       const res = await getUserByClerkId(clientId);
+      console.log(res, "res");
       setClient(res || []);
-      setClientProfileData(Object.keys(res[0].clientProfile).length === 0);
-      setArchived(res[0].clientProfile["archived"]);
+      if (res[0].clientProfile) {
+        setHasClientProfile(true);
+        setClientProfileData(Object.keys(res[0].clientProfile).length === 0);
+        setArchived(res[0].clientProfile["archived"]);
+        setHasClientProfile(true);
+      }
     } catch (error) {
       console.error("Failed to fetch users:", error);
     } finally {
@@ -39,12 +45,43 @@ export default function ClientPage() {
     fetchUsers();
   }, []);
 
-
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-gray-700 text-lg font-medium">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!hasClientProfile) {
+    return (
+      <div className="container mx-auto">
+        <ul className="list bg-base-100 rounded-box shadow-md mt-12">
+          {" "}
+          <li className="list-row">
+            <div>
+              <FaC className="text-xl  w-full h-full" />
+            </div>
+            <div className="mt-2">
+              {client[0].email} isn't assigned to a trainer
+            </div>
+            <div>
+              <div></div>
+              <div></div>
+            </div>
+            <button
+              onClick={openEditModal}
+              className="btn btn-square btn-ghost"
+            >
+              <FaPenToSquare />
+            </button>
+            <EditModal
+              title={client[0].email}
+              isOpen={modalType === "edit"}
+              onClose={closeModal}
+            />
+          </li>
+        </ul>
       </div>
     );
   }
@@ -110,7 +147,6 @@ export default function ClientPage() {
           </li>
         )}
       </ul>
-
     </div>
   );
 }

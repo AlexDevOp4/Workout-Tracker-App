@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { updateClient } from "../../api/clients";
+import { createClient, updateClient } from "../../api/clients";
 import { getUserByClerkId } from "../../api/users";
 
 export function EditModal({ isOpen, onClose, title }) {
@@ -9,16 +9,20 @@ export function EditModal({ isOpen, onClose, title }) {
   const [lastName, setLastName] = useState("");
   const [archived, setArchived] = useState();
   const [notes, setNotes] = useState("");
+  const [client, setClient] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchUsers() {
       try {
         const res = await getUserByClerkId(clientId);
-        setFirstName(res[0].clientProfile["firstName"]);
-        setLastName(res[0].clientProfile["lastName"]);
-        setNotes(res[0].clientProfile["notes"]);
-        setArchived(res[0].clientProfile["archived"]);
+        setClient(res);
+        if (res[0].clientProfile) {
+          setFirstName(res[0].clientProfile["firstName"]);
+          setLastName(res[0].clientProfile["lastName"]);
+          setNotes(res[0].clientProfile["notes"]);
+          setArchived(res[0].clientProfile["archived"]);
+        }
       } catch (error) {
         console.error("Failed to fetch users:", error);
       } finally {
@@ -30,23 +34,35 @@ export function EditModal({ isOpen, onClose, title }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const clerkId = clientId;
 
     try {
-      const res = await getUserByClerkId(clerkId);
-      const userId = res[0].id;
-      await updateClient(userId, {
-        firstName,
-        lastName,
-        notes,
-        trainerId,
-        archived,
-      });
+      const hasClientProfile = client[0].clientProfile;
+      const userId = client[0].id;
+
+      if (!hasClientProfile) {
+        await createClient(userId, {
+          firstName,
+          lastName,
+          notes,
+          trainerId,
+          archived,
+        });
+      } else {
+        await updateClient(userId, {
+          firstName,
+          lastName,
+          notes,
+          trainerId,
+          archived,
+        });
+      }
+
       onClose();
     } catch (error) {
       console.error("Failed to create user:", error);
     }
   }
+
   if (!isOpen) return null;
 
   if (isLoading) {

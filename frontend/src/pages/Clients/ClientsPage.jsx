@@ -1,50 +1,21 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
-import { getClients, createClient, getAllClients } from "../../api/clients";
-import { getTrainers, getUsers, getClientUsers } from "../../api/users";
+import { useEffect, useState } from "react";
+import { getClients } from "../../api/clients";
+import { getTrainers, getClientUsers } from "../../api/users";
 
 export default function ClientsPage() {
   const [clients, setClients] = useState([]);
-  const [availableClients, setAvailableClients] = useState([]);
   const [canAssign, setCanAssign] = useState([]);
   const [cantAssign, setCantAssign] = useState([]);
   const [trainerClients, setTrainerClients] = useState([]);
-  const [trainers, setTrainers] = useState([]);
   const [trainerId, setTrainerId] = useState("");
   const [trainerName, setTrainerName] = useState("Select a Trainer: ");
   const [trainer, setTrainer] = useState([]);
-  const [clientNames, setClientNames] = useState({});
-  const [clientList, setClientList] = useState([]);
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUsers = async () => {
+  const fetchTrainers = async () => {
     try {
-      const res = await getUsers();
-      const clients = await getAllClients();
-      const clientUsers = await getClientUsers();
-      console.log(clientUsers.clients, "clients");
-      const clientUsersData = clientUsers.clients;
-      const hasClientProfile = clientUsersData.filter(
-        (client) => client.clientProfile
-      );
-      setCantAssign(hasClientProfile);
-      const noClientProfile = clientUsersData.filter(
-        (client) => !client.clientProfile
-      );
-      setCanAssign(noClientProfile);
-      console.log(noClientProfile, "noClientProfile");
-      const filteredClients = clients.filter(
-        (c) => !c.archived && c.trainerId === null
-      );
-      setClientList(filteredClients);
-      const users = res.users;
-      const clientsFiltered = users.filter((r) => r.role === "CLIENT");
-      const intersectionClients = clients.filter(
-        (x) => !clientsFiltered.includes(x.userId)
-      );
-      setAvailableClients(clientsFiltered);
-
       const trainerData = await getTrainers();
       const mappedTrainerData = trainerData.map((x) => {
         return {
@@ -54,17 +25,29 @@ export default function ClientsPage() {
           email: x.email,
         };
       });
-
-      console.log(mappedTrainerData, "mapped");
       setTrainer(mappedTrainerData);
-
-      const clientsList = users.filter((r) => r.role === "CLIENT");
-      console.log(clientList, "client");
-      const trainerlist = users.filter((user) => user.role === "TRAINER");
-      setClients(clientsList);
-      setTrainers(trainerlist);
     } catch (error) {
-      console.error("Failed to fetch users:", error);
+      console.error("Failed to fetch trainers:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchClientUsers = async () => {
+    try {
+      const clientUsers = await getClientUsers();
+      const clientUsersData = clientUsers.clients;
+      setClients(clientUsersData);
+      const hasClientProfile = clientUsersData.filter(
+        (client) => client.clientProfile
+      );
+      setCantAssign(hasClientProfile);
+      const noClientProfile = clientUsersData.filter(
+        (client) => !client.clientProfile
+      );
+      setCanAssign(noClientProfile);
+    } catch (error) {
+      console.log("Failed to fetch clients: ", error);
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +56,6 @@ export default function ClientsPage() {
   const fetchAvailableClients = async (id) => {
     try {
       const clients = await getClients(id);
-      console.log(clients, "CLIENTS");
       setTrainerClients(clients);
     } catch (error) {
       console.error("Failed to fetch users:", error);
@@ -83,7 +65,8 @@ export default function ClientsPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchClientUsers();
+    fetchTrainers();
   }, []);
 
   if (isLoading) {
@@ -99,7 +82,7 @@ export default function ClientsPage() {
   ) : (
     <div>
       <div className="min-h-screen flex flex-col">
-        {/* Upper Section */}
+
         <section className="flex-1 bg-gray-900 p-6 flex items-center justify-center">
           <div className="max-w-xl w-full">
             <div className="dropdown">
@@ -114,10 +97,11 @@ export default function ClientsPage() {
                   <li key={t.id}>
                     <button
                       onClick={(e) => {
-                        console.log(t.id);
                         setTrainerName(`${t.firstName} ${t.lastName}`);
                         setTrainerId(t.id);
                         fetchAvailableClients(t.id);
+                        fetchClientUsers();
+
                         e.currentTarget.blur();
                       }}
                     >
@@ -177,7 +161,7 @@ export default function ClientsPage() {
           </div>
         </section>
 
-        {/* Lower Section */}
+  
         <section className="flex-1 bg-gray-100 p-6 flex items-center justify-center">
           <div className="max-w-xl w-full">
             <ul className="list bg-base-100 rounded-box shadow-md">
@@ -185,21 +169,19 @@ export default function ClientsPage() {
                 Clients
               </li>
 
-              {clients.length === 0 ? (
+              {cantAssign.length === 0 ? (
                 <li className="list-row">
                   <div>No available Clients</div>
                 </li>
               ) : (
-                clients.map((client) => (
+                cantAssign.map((client) => (
                   <li className="list-row" key={client.id}>
                     <div>
-                      <Link
-                        className="text-black"
-                        key={client.id}
-                        to={`/client/${client.id}`}
-                      >
+                      {client.clientProfile["firstName"]}{" "}
+                      {client.clientProfile["lastName"]}
+                      <div className="text-xs uppercase font-semibold opacity-60">
                         {client.email}
-                      </Link>
+                      </div>
                     </div>
                   </li>
                 ))

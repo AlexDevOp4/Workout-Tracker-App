@@ -19,7 +19,7 @@ export const getAllClients = async (req, res) => {
 // POST /api/create/:id
 export const createClient = async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findUniqueOrThrow({
       where: {
         clerkId: req.params.id,
       },
@@ -65,7 +65,6 @@ export const getClientlists = async (req, res) => {
 
 export const getClientUsers = async (req, res) => {
   const { id } = req.params;
-  console.log(id);
 
   try {
     const clients = await prisma.user.findUnique({

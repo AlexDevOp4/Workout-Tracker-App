@@ -16,7 +16,6 @@ export default function UsersPage() {
       try {
         const res = await getUsers();
         setUsers(res.users || []); // fallback to empty array if undefined
-        console.log(res.users);
       } catch (error) {
         console.error("Failed to fetch users:", error);
       } finally {
