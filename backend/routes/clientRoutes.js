@@ -17,7 +17,7 @@ router.post("/:id/restore", restoreClient);
 router.get("/", getClientlists);
 router.get("/user/:id", getClientUsers);
 router.get("/all", getAllClients);
-router.get("/:id", getClientById);
+router.get("/:trainerId", getClientById);
 router.patch("/:id", updateClientById);
 router.delete("/:id", softDeleteClient);
 

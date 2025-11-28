@@ -1,19 +1,19 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getClients, createClient, getAllClients } from "../../api/clients";
 import { getTrainers, getUsers } from "../../api/users";
 
 export default function ClientsPage() {
   const [clients, setClients] = useState([]);
   const [availableClients, setAvailableClients] = useState([]);
+  const [trainerClients, setTrainerClients] = useState([]);
   const [trainers, setTrainers] = useState([]);
   const [trainerId, setTrainerId] = useState("");
   const [trainerName, setTrainerName] = useState("Select a Trainer: ");
   const [trainer, setTrainer] = useState([]);
   const [clientNames, setClientNames] = useState({});
   const [clientList, setClientList] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [name, setName] = useState("");
+
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUsers = async () => {
@@ -27,14 +27,15 @@ export default function ClientsPage() {
       setClientList(filteredClients);
       const users = res.users;
       const clientsFiltered = users.filter((r) => r.role === "CLIENT");
-      const intersectionClients = clients.filter(x => !clientsFiltered.includes(x.userId))
-      console.log(intersectionClients, 'inter')
+      const intersectionClients = clients.filter(
+        (x) => !clientsFiltered.includes(x.userId)
+      );
+      console.log(intersectionClients, "inter");
       setAvailableClients(clientsFiltered);
 
-
       const trainerData = await getTrainers();
-      console.log(trainerData.trainers, "data");
-      const mappedTrainerData = trainerData.trainers.map((x) => {
+      console.log(trainerData, "data");
+      const mappedTrainerData = trainerData.map((x) => {
         return {
           id: x.id,
           firstName: x.trainerProfile["firstName"],
@@ -43,7 +44,7 @@ export default function ClientsPage() {
         };
       });
 
-      console.log(typeof mappedTrainerData);
+      console.log(mappedTrainerData, "mapped");
       setTrainer(mappedTrainerData);
 
       const clientsList = users.filter((r) => r.role === "CLIENT");
@@ -58,50 +59,21 @@ export default function ClientsPage() {
     }
   };
 
-  useEffect(() => {
-    // const fetchClients = async () => {
-    //     try {
-    //         const clients = await getClients()
-    //         console.log(clients)
-    //         setClients()
-
-    //     } catch (error) {
-    //         console.log('Failed to fetch clients', error)
-
-    //     } finally {
-    //         setIsLoading(false)
-    //     }
-
-    // }
-    fetchUsers();
-    // fetchClients()
-  }, []);
-
-  const handleNameChange = (id, value) => {
-    setClientNames((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
-  };
-
-  const addClientToTrainersProfile = async (id, names) => {
-    const data = {
-      name: names,
-      trainerId: "4e441a71-4599-49bf-94e0-ff3dd17f4252",
-    };
+  const fetchAvailableClients = async (id) => {
     try {
-      console.log(id, names);
-
-      const addClient = await createClient(id, data);
-
-      console.log(addClient);
-
-      fetchUsers();
+      const clients = await getClients(id);
+      console.log(clients, "CLIENTS");
+      setTrainerClients(clients);
     } catch (error) {
-      console.log(error);
-      return error;
+      console.error("Failed to fetch users:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   if (isLoading) {
     return (
@@ -130,9 +102,13 @@ export default function ClientsPage() {
                 {trainer.map((t) => (
                   <li key={t.id}>
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        console.log(t.id);
                         setTrainerName(`${t.firstName} ${t.lastName}`);
-                        setTrainerId(`${t.id}`);
+                        setTrainerId(t.id);
+                        fetchAvailableClients(t.id);
+                        e.currentTarget.blur();
+
                       }}
                     >
                       {t.firstName} {t.lastName}
@@ -147,11 +123,14 @@ export default function ClientsPage() {
                 Clients for this trainer
               </li>
 
-              {availableClients.map((client) => (
+              {trainerClients.map((client) => (
                 <li className="list-row" key={client.id}>
                   <div>
-                    <Link key={client.id} to={`/client/${client.id}`}>
-                      {client.email}
+                    <Link
+                      key={client.userId}
+                      to={`/client/${client.user["clerkId"]}/trainer/${client.trainerId}`}
+                    >
+                      {client.firstName} {client.lastName}
                     </Link>
                   </div>
                 </li>

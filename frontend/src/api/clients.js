@@ -1,7 +1,7 @@
 import { api } from "./client";
 
 export const getClients = async (trainerId) =>
-  (await api.get("/api/client", { params: { trainerId } })).data;
+  (await api.get(`/api/client/${trainerId}`)).data;
 export const getClientsUsers = async (clerkId) =>
   (await api.get(`/api/client/user/${clerkId}`)).data;
 export const getAllClients = async () =>

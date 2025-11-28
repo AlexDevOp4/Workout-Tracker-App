@@ -85,7 +85,7 @@ export const getClientUsers = async (req, res) => {
 
 // GET /api/clients/:id
 export const getClientById = async (req, res) => {
-  const { trainerId } = req.query;
+  const { trainerId } = req.params;
 
   try {
     const clients = await prisma.clientProfile.findMany({
@@ -100,20 +100,8 @@ export const getClientById = async (req, res) => {
           },
         },
       },
-
-      omit: {
-        id: true,
-      },
     });
 
-    const client = clients.filter((c) => c.userId == id);
-
-    const clientData = {
-      trainerId: client[0].trainerId,
-      name: client[0].name,
-      notes: client[0].notes,
-      archived: client[0].archived,
-    };
 
     return res.status(200).json(clients);
   } catch (error) {

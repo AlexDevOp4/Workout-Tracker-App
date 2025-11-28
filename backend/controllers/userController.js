@@ -35,10 +35,13 @@ export const getUserByClerkId = async (req, res) => {
 
     return res.status(200).json([fullUser]);
   } catch (error) {
-    return res.status(404).json({ error: "Error fetching users " + error });
+    return res
+      .status(404)
+      .json({ error: "getUserByClerkId: Error fetching users " + error });
   }
 };
 
+// GET /api/users/clients
 export const getClientUsers = async (req, res) => {
   try {
     const clients = await prisma.user.findMany({
@@ -56,6 +59,7 @@ export const getClientUsers = async (req, res) => {
   }
 };
 
+// GET /api/users/trainers
 export const getTrainers = async (req, res) => {
   try {
     const trainers = await prisma.user.findMany({
@@ -72,9 +76,11 @@ export const getTrainers = async (req, res) => {
       },
     });
 
-    return res.status(200).json({ trainers });
+    return res.status(200).json(trainers);
   } catch (error) {
-    return res.status(404).json({ error: "Error fetching users " + error });
+    return res
+      .status(404)
+      .json({ error: "getTrainers: Error fetching users " + error });
   }
 };
 

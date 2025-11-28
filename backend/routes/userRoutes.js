@@ -7,15 +7,15 @@ import {
   deleteUserById,
   getClientUsers,
   getTrainers,
-  getUserByClerkId
+  getUserByClerkId,
 } from "../controllers/userController.js";
 
 const router = express.Router();
 
 router.get("/", getUsers);
-router.get("/:clerkId", getUserByClerkId)
-router.get("/clients", getClientUsers);
 router.get("/trainers", getTrainers);
+router.get("/:clerkId", getUserByClerkId);
+router.get("/clients", getClientUsers);
 router.get("/:id", getUserById);
 router.patch("/:id", updateUserById);
 router.post("/create", createUser);
