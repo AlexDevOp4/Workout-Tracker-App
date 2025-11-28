@@ -14,8 +14,8 @@ const router = express.Router();
 
 router.get("/", getUsers);
 router.get("/trainers", getTrainers);
-router.get("/:clerkId", getUserByClerkId);
 router.get("/clients", getClientUsers);
+router.get("/:clerkId", getUserByClerkId);
 router.get("/:id", getUserById);
 router.patch("/:id", updateUserById);
 router.post("/create", createUser);

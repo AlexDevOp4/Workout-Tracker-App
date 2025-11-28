@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { getClients, createClient, getAllClients } from "../../api/clients";
-import { getTrainers, getUsers } from "../../api/users";
+import { getTrainers, getUsers, getClientUsers } from "../../api/users";
 
 export default function ClientsPage() {
   const [clients, setClients] = useState([]);
   const [availableClients, setAvailableClients] = useState([]);
+  const [canAssign, setCanAssign] = useState([]);
+  const [cantAssign, setCantAssign] = useState([]);
   const [trainerClients, setTrainerClients] = useState([]);
   const [trainers, setTrainers] = useState([]);
   const [trainerId, setTrainerId] = useState("");
@@ -20,7 +22,18 @@ export default function ClientsPage() {
     try {
       const res = await getUsers();
       const clients = await getAllClients();
-      console.log(clients, "clients");
+      const clientUsers = await getClientUsers();
+      console.log(clientUsers.clients, "clients");
+      const clientUsersData = clientUsers.clients;
+      const hasClientProfile = clientUsersData.filter(
+        (client) => client.clientProfile
+      );
+      setCantAssign(hasClientProfile);
+      const noClientProfile = clientUsersData.filter(
+        (client) => !client.clientProfile
+      );
+      setCanAssign(noClientProfile);
+      console.log(noClientProfile, "noClientProfile");
       const filteredClients = clients.filter(
         (c) => !c.archived && c.trainerId === null
       );
@@ -30,11 +43,9 @@ export default function ClientsPage() {
       const intersectionClients = clients.filter(
         (x) => !clientsFiltered.includes(x.userId)
       );
-      console.log(intersectionClients, "inter");
       setAvailableClients(clientsFiltered);
 
       const trainerData = await getTrainers();
-      console.log(trainerData, "data");
       const mappedTrainerData = trainerData.map((x) => {
         return {
           id: x.id,
@@ -108,7 +119,6 @@ export default function ClientsPage() {
                         setTrainerId(t.id);
                         fetchAvailableClients(t.id);
                         e.currentTarget.blur();
-
                       }}
                     >
                       {t.firstName} {t.lastName}
@@ -143,12 +153,12 @@ export default function ClientsPage() {
                   Available clients to assign
                 </li>
 
-                {availableClients.length === 0 ? (
+                {canAssign.length === 0 ? (
                   <li className="list-row">
                     <div>No available Clients</div>
                   </li>
                 ) : (
-                  availableClients.map((client) => (
+                  canAssign.map((client) => (
                     <li className="list-row" key={client.id}>
                       <div>
                         <Link
