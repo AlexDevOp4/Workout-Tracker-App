@@ -1,36 +1,81 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import UsersPage from './pages/Users/UsersPage';
-import ClientsPage from './pages/Clients/ClientsPage';
-import TrainerPage from './pages/Trainer/TrainerPage';
-import ClientPage from './pages/Client/ClientPage';
+import { Routes, Route, Navigate } from "react-router-dom";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import NavBar from "./components/navbar/Navbar";
+import UsersPage from "./pages/Users/UsersPage";
+import ClientsPage from "./pages/Clients/ClientsPage";
+import TrainerPage from "./pages/Trainer/TrainerPage";
+import ClientPage from "./pages/Client/ClientPage";
+import SignIn from "./pages/signIn/SignIn";
+
 // import ProgramsPage from './pages/Programs/ProgramsPage';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <nav className="navbar bg-base-100 shadow-sm flex flex-row">
-        <Link className="btn btn-ghost text-xl" to="/users">
-          Users
-        </Link>{" "}
-        |{" "}
-        <Link className="btn btn-ghost text-xl" to="/clients">
-          Clients
-        </Link>{" "}
-        |{" "}
-        <Link className="btn btn-ghost text-xl" to="/programs">
-          Programs
-        </Link>
-      </nav>
+    <>
+      <SignedIn>
+        <NavBar />
+      </SignedIn>
+
       <Routes>
-        <Route path="/users" element={<UsersPage />} />
-        <Route path="/clients" element={<ClientsPage />} />
+        <Route
+          path="/sign-in"
+          element={
+            <SignedOut>
+              <SignIn />
+            </SignedOut>
+          }
+        />
+
+        <Route
+          path="/users"
+          element={
+            <SignedIn>
+              <UsersPage />
+            </SignedIn>
+          }
+        />
+
+        <Route
+          path="/clients"
+          element={
+            <SignedIn>
+              <ClientsPage />
+            </SignedIn>
+          }
+        />
+
         <Route
           path="/client/:clientId/trainer/:trainerId"
-          element={<ClientPage />}
+          element={
+            <SignedIn>
+              <ClientPage />
+            </SignedIn>
+          }
         />
-        <Route path="/trainer/:id" element={<TrainerPage />} />
-        {/* <Route path="/programs" element={<ProgramsPage />} /> */}
+
+        <Route
+          path="/trainer/:id"
+          element={
+            <SignedIn>
+              <TrainerPage />
+            </SignedIn>
+          }
+        />
+
+        <Route
+          path="*"
+          element={
+            <>
+              <SignedIn>
+                <Navigate to="/users" replace />
+              </SignedIn>
+              <SignedOut>
+                <Navigate to="/sign-in" replace />
+              </SignedOut>
+            </>
+          }
+        />
       </Routes>
-    </BrowserRouter>
+    </>
   );
 }
