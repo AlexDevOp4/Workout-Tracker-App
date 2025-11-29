@@ -33,6 +33,19 @@ export default function ClientsPage() {
     }
   };
 
+  const fetchCanAssign = async () => {
+    try {
+      const clientUsers = await getClientUsers();
+      const clientUsersData = clientUsers.clients;
+      const noClientProfile = clientUsersData.filter(
+        (client) => !client.clientProfile
+      );
+      setCanAssign(noClientProfile);
+    } catch (error) {
+      console.log("Failed to fetch clients: ", error);
+    }
+  };
+
   const fetchClientUsers = async () => {
     try {
       const clientUsers = await getClientUsers();
@@ -42,10 +55,6 @@ export default function ClientsPage() {
         (client) => client.clientProfile
       );
       setCantAssign(hasClientProfile);
-      const noClientProfile = clientUsersData.filter(
-        (client) => !client.clientProfile
-      );
-      setCanAssign(noClientProfile);
     } catch (error) {
       console.log("Failed to fetch clients: ", error);
     } finally {
@@ -82,7 +91,6 @@ export default function ClientsPage() {
   ) : (
     <div>
       <div className="min-h-screen flex flex-col">
-
         <section className="flex-1 bg-gray-900 p-6 flex items-center justify-center">
           <div className="max-w-xl w-full">
             <div className="dropdown">
@@ -101,6 +109,7 @@ export default function ClientsPage() {
                         setTrainerId(t.id);
                         fetchAvailableClients(t.id);
                         fetchClientUsers();
+                        fetchCanAssign();
 
                         e.currentTarget.blur();
                       }}
@@ -161,7 +170,6 @@ export default function ClientsPage() {
           </div>
         </section>
 
-  
         <section className="flex-1 bg-gray-100 p-6 flex items-center justify-center">
           <div className="max-w-xl w-full">
             <ul className="list bg-base-100 rounded-box shadow-md">

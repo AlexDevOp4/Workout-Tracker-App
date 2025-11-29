@@ -42,6 +42,7 @@ export const createProgram = async (req, res) => {
                 trainerId,
                 startDate: utcMidnight,
                 status: "active",
+                title
 
             }
         })

@@ -3,9 +3,10 @@ import { useParams } from "react-router-dom";
 import { FaPenToSquare } from "react-icons/fa6";
 import { FaTrashCan } from "react-icons/fa6";
 import { FaC } from "react-icons/fa6";
-import { EditModal } from "../../components/modal/editModal";
+import { EditModal } from "../../components/modal/EditModal";
 import { getUserByClerkId } from "../../api/users";
 import { DeleteModal } from "../../components/modal/DeleteModal";
+import ProgramTable from "../../components/tables/ProgramTable";
 
 export default function ClientPage() {
   const { clientId } = useParams();
@@ -147,6 +148,7 @@ export default function ClientPage() {
           </li>
         )}
       </ul>
+      <ProgramTable />
     </div>
   );
 }
