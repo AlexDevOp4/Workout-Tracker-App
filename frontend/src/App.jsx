@@ -5,7 +5,7 @@ import UsersPage from "./pages/Users/UsersPage";
 import ClientsPage from "./pages/Clients/ClientsPage";
 import TrainerPage from "./pages/Trainer/TrainerPage";
 import ClientPage from "./pages/Client/ClientPage";
-import SignIn from "./pages/signIn/SignIn";
+import SignInPage from "./pages/signIn/SignIn";
 
 // import ProgramsPage from './pages/Programs/ProgramsPage';
 
@@ -21,7 +21,7 @@ export default function App() {
           path="/sign-in"
           element={
             <SignedOut>
-              <SignIn />
+              <SignInPage />
             </SignedOut>
           }
         />
