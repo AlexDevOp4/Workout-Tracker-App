@@ -6,6 +6,7 @@ import ClientsPage from "./pages/Clients/ClientsPage";
 import TrainerPage from "./pages/Trainer/TrainerPage";
 import ClientPage from "./pages/Client/ClientPage";
 import SignInPage from "./pages/signIn/SignIn";
+import ProgramPage from "./pages/Program/ProgramPage";
 
 // import ProgramsPage from './pages/Programs/ProgramsPage';
 
@@ -58,6 +59,15 @@ export default function App() {
           element={
             <SignedIn>
               <TrainerPage />
+            </SignedIn>
+          }
+        />
+
+        <Route
+          path="/program/:programId"
+          element={
+            <SignedIn>
+              <ProgramPage />
             </SignedIn>
           }
         />

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getPrograms } from "../../api/programs";
 import { getUserByClerkId } from "../../api/users";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 export default function ProgramTable() {
   const { clientId } = useParams();
   const [programs, setPrograms] = useState([]);
@@ -38,9 +38,7 @@ export default function ProgramTable() {
           {programs.length != null ? (
             programs.map((x) => (
               <li key={x.id} className="list-row">
-                <div>
-                 
-                </div>
+                <div></div>
                 <div>
                   <div className="font-bold">{x.title}</div>
                   <div className="text-xs  font-semibold opacity-60">
@@ -48,9 +46,14 @@ export default function ProgramTable() {
                   </div>
                 </div>
                 <div>
-                  <button className="btn btn-square btn-ghost">pen</button>
-
-                  <button className="btn btn-square btn-ghost">trash</button>
+                  <Link
+                    className="btn btn-square btn-ghost"
+                    key={x.id}
+                    to={`/program/${x.id}`}
+                  >
+                    View
+                  </Link>
+              
                 </div>
               </li>
             ))
