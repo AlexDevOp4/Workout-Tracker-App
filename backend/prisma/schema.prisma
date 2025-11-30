@@ -129,19 +129,31 @@ model Week {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  rows Row[]
+  days Day[]
   // If each program can have only one of each weekNumber, enforce:
   // @@unique([programId, weekNumber])
 
   @@index([programId, weekNumber])
 }
 
-model Row {
-  id String @id @default(uuid())
-
+model Day {
+  id        String @id @default(uuid())
   week      Week   @relation(fields: [weekId], references: [id])
   weekId    String
   dayNumber Int
+  rows      Row[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([weekId, dayNumber])
+}
+
+model Row {
+  id String @id @default(uuid())
+
+  day   Day    @relation(fields: [dayId], references: [id])
+  dayId String
 
   // Trainer fields
   exercise      Exercise @relation(fields: [exerciseId], references: [id])
@@ -162,7 +174,7 @@ model Row {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  @@index([weekId, dayNumber])
+  @@index([dayId])
   @@index([exerciseId])
 }
 

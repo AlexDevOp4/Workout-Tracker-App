@@ -13,10 +13,11 @@ import {
 import auth from "../routes/auth.js";
 import clientRoutes from "../routes/clientRoutes.js";
 import userRoutes from "../routes/userRoutes.js";
-import programRoutes from '../routes/programRoutes.js'
-import weekRoutes from '../routes/weekRoutes.js'
-import rowRoutes from '../routes/rowRoutes.js'
-import exerciseRoutes from '../routes/exerciseRoutes.js'
+import programRoutes from "../routes/programRoutes.js";
+import weekRoutes from "../routes/weekRoutes.js";
+import rowRoutes from "../routes/rowRoutes.js";
+import exerciseRoutes from "../routes/exerciseRoutes.js";
+import dayRoutes from "../routes/dayRoutes.js";
 
 import pkg from "@prisma/client";
 const { PrismaClient, Prisma } = pkg;
@@ -65,10 +66,11 @@ app.get("/", async (req, res) => {
 
 app.use("/api/client", clientRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/programs", programRoutes)
-app.use("/api/weeks", weekRoutes)
-app.use("/api/rows", rowRoutes)
-app.use("/api/exercises", exerciseRoutes)
+app.use("/api/programs", programRoutes);
+app.use("/api/weeks", weekRoutes);
+app.use("/api/rows", rowRoutes);
+app.use("/api/exercises", exerciseRoutes);
+app.use("/api/days", dayRoutes);
 // Start server
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);

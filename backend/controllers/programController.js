@@ -80,7 +80,20 @@ export const getPrograms = async (req, res) => {
     const programs = await prisma.program.findMany({
       where,
       include: {
-        weeks: { include: { rows: { include: { exercise: true } } } },
+        weeks: {
+          include: {
+            days: {
+              orderBy: { dayNumber: "asc" }, // optional but useful
+              include: {
+                rows: {
+                  include: {
+                    exercise: true, // ✅ this is on Row
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -97,16 +110,18 @@ export const getProgramById = async (req, res) => {
 
   try {
     const program = await prisma.program.findUniqueOrThrow({
-      where: {
-        id,
-      },
-
+      where: { id },
       include: {
         weeks: {
           include: {
-            rows: {
+            days: {
+              orderBy: { dayNumber: "asc" }, // optional but useful
               include: {
-                exercise: true, // <- THIS
+                rows: {
+                  include: {
+                    exercise: true, // ✅ this is on Row
+                  },
+                },
               },
             },
           },
@@ -121,8 +136,6 @@ export const getProgramById = async (req, res) => {
             trainerProfile: true,
           },
         },
-
-        // client, trainer includes here if needed...
       },
     });
 

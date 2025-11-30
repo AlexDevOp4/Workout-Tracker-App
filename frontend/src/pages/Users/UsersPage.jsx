@@ -37,6 +37,8 @@ export default function UsersPage() {
         lastName,
       });
       setUsers((prev) => [...prev, newUser.user]);
+      setFirstName("")
+      setLastName("")
       setEmail("");
       setUserName("");
       setPassword("");
