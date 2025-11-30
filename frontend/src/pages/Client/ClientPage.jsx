@@ -7,6 +7,7 @@ import { EditModal } from "../../components/modal/EditModal";
 import { getUserByClerkId } from "../../api/users";
 import { DeleteModal } from "../../components/modal/DeleteModal";
 import ProgramTable from "../../components/tables/ProgramTable";
+import { CreateProgramModal } from "../../components/modal/CreateProgramModal";
 
 export default function ClientPage() {
   const { clientId } = useParams();
@@ -18,6 +19,7 @@ export default function ClientPage() {
   const [hasClientProfile, setHasClientProfile] = useState(false);
 
   const openEditModal = () => setModalType("edit");
+  const openCreateProgramModal = () => setModalType("create");
   const openDeleteModal = () => setModalType("delete");
   const closeModal = () => {
     setModalType(null);
@@ -27,7 +29,6 @@ export default function ClientPage() {
   const fetchUsers = async () => {
     try {
       const res = await getUserByClerkId(clientId);
-      console.log(res, "res");
       setClient(res || []);
       if (res[0].clientProfile) {
         setHasClientProfile(true);
@@ -148,6 +149,18 @@ export default function ClientPage() {
           </li>
         )}
       </ul>
+      <button
+        className="btn btn-square btn-ghost"
+        onClick={openCreateProgramModal}
+      >
+        Create Program
+      </button>
+      <CreateProgramModal
+        className="overflow-scroll"
+        isOpen={modalType === "create"}
+        onClose={closeModal}
+        titles={clientId}
+      />
       <ProgramTable />
     </div>
   );
