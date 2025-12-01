@@ -1,5 +1,6 @@
 import pkg from "@prisma/client";
 const { PrismaClient } = pkg;
+import { validateProgramPayload } from "../helpers/validateProgramPayload.js";
 
 import { z } from "zod";
 import { DateTime } from "luxon";
@@ -9,7 +10,25 @@ const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 
 // POST /api/programs
 export const createProgram = async (req, res) => {
-  const { clientProfileId, trainerId, title, startDate } = req.body;
+  const { clientProfileId, trainerId, title, weeks } = req.body;
+
+  if (!Array.isArray(weeks) || weeks.length === 0) {
+    return res.status(400).json({ message: "At least one week is required" });
+  }
+
+  if (!clientProfileId || !trainerId || !title) {
+    return res.status(400).json({
+      message: "clientProfileId, trainerId, and title are required",
+    });
+  }
+
+  const validationError = validateProgramPayload(weeks);
+  if (validationError) {
+    return res
+      .status(400)
+      .json({ message: "clientProfileId, trainerId, and title are required." });
+  }
+
   const parse = dateSchema.safeParse(req.body.startDate);
   if (!parse.success)
     return res.status(400).json({ message: parse.error.issues[0].message });
@@ -21,7 +40,7 @@ export const createProgram = async (req, res) => {
     .toJSDate();
 
   try {
-    const clientProfile = await prisma.clientProfile.findUniqueOrThrow({
+    await prisma.clientProfile.findUniqueOrThrow({
       where: {
         id: clientProfileId,
       },
@@ -33,28 +52,76 @@ export const createProgram = async (req, res) => {
       },
     });
 
-    if (clientProfile.id !== clientProfileId || trainer.role !== "TRAINER") {
-      return res.status(404).json({
-        error:
-          "Client Profile Id has to be present and only Trainers can create programs!",
+    if (trainer.role !== "TRAINER") {
+      return res.status(403).json({
+        error: "Only trainers can create programs.",
       });
     }
 
-    const programCreated = await prisma.program.create({
+    const program = await prisma.program.create({
       data: {
         clientId: clientProfileId,
         trainerId,
-        startDate: utcMidnight,
-        status: "active",
         title,
+        status: "active",
+        startDate: utcMidnight,
+        weeks: {
+          create: weeks.map((week) => ({
+            weekNumber: week.weekNumber,
+            isDeload: week.isDeload ?? false,
+
+            days: {
+              create: (week.days || []).map((day) => ({
+                dayNumber: day.dayNumber,
+
+                rows: {
+                  create: (day.rows || []).map((row) => ({
+                    exerciseId: row.exerciseId,
+                    sets: row.sets,
+                    weightLbs: row.weightLbs,
+                    targetRepsMin: row.targetRepsMin,
+                    targetRepsMax: row.targetRepsMax,
+                    rir: row.rir,
+                    restSec: row.restSec,
+                    actualReps: row.actualReps ?? [],
+                    notes: row.notes ?? null,
+                  })),
+                },
+              })),
+            },
+          })),
+        },
+      },
+      include: {
+        weeks: {
+          include: {
+            days: {
+              orderBy: { dayNumber: "asc" },
+              include: {
+                rows: {
+                  include: {
+                    exercise: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        client: {
+          include: { user: true },
+        },
+        trainer: {
+          include: { trainerProfile: true },
+        },
       },
     });
 
     const startDateOut = dateStr; // or DateTime.fromJSDate(program.startDate).toISODate()
 
-    return res.status(201).json({ ...programCreated, startDate: startDateOut });
+    return res.status(201).json({ program, startDate: startDateOut });
   } catch (error) {
-    res.status(404).json({ error: `Error creating program ${error}` });
+    console.error("Error creating program:", error);
+    return res.status(500).json({ error: "Error creating program" });
   }
 };
 

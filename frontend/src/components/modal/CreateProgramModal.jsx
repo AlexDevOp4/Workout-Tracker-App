@@ -1,22 +1,11 @@
 import { useEffect, useState } from "react";
 import { getUserByClerkId } from "../../api/users";
+import { getExercises } from "../../api/exercises";
+import { createProgram } from "../../api/programs";
 
-const dummyClients = [
-  { id: "client-1", name: "John Doe" },
-  { id: "client-2", name: "Jane Smith" },
-  { id: "client-3", name: "Devon Test" },
-];
-
-const dummyExercises = [
-  { id: "ex-1", name: "Barbell Back Squat", category: "LOWER" },
-  { id: "ex-2", name: "Barbell Bench Press", category: "UPPER" },
-  { id: "ex-3", name: "Romanian Deadlift", category: "LOWER" },
-  { id: "ex-4", name: "Pull-Up", category: "UPPER" },
-];
-
-export function CreateProgramModal({ isOpen, onClose, titles, children }) {
-  const [selectedClientId, setSelectedClientId] = useState("");
+export function CreateProgramModal({ isOpen, onClose, titles }) {
   const [client, setClient] = useState([]);
+  const [exercises, setExercises] = useState([]);
   const [title, setTitle] = useState("Program 1");
   const [isLoading, setIsLoading] = useState(true);
   const [startDate, setStartDate] = useState("");
@@ -33,6 +22,18 @@ export function CreateProgramModal({ isOpen, onClose, titles, children }) {
     },
   ]);
 
+  const fetchExercises = async () => {
+    try {
+      const res = await getExercises();
+      console.log(res, "EXERCISES");
+      setExercises(res);
+    } catch (error) {
+      console.error("Failed to fetch exercises:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const fetchUsers = async () => {
     try {
       const res = await getUserByClerkId(titles);
@@ -47,6 +48,7 @@ export function CreateProgramModal({ isOpen, onClose, titles, children }) {
 
   useEffect(() => {
     fetchUsers();
+    fetchExercises();
   }, []);
 
   const handleAddWeek = () => {
@@ -85,7 +87,7 @@ export function CreateProgramModal({ isOpen, onClose, titles, children }) {
       const day = updated[weekIndex].days[dayIndex];
       day.rows.push({
         id: crypto.randomUUID(),
-        exerciseId: dummyExercises[0].id,
+        exerciseId: exercises[0].id,
         sets: 3,
         weightLbs: 135,
         targetRepsMin: 8,
@@ -129,13 +131,9 @@ export function CreateProgramModal({ isOpen, onClose, titles, children }) {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!selectedClientId) {
-      alert("Select a client first.");
-      return;
-    }
+    console.log(client[0].id);
 
     if (!startDate) {
       alert("Choose a start date.");
@@ -143,17 +141,19 @@ export function CreateProgramModal({ isOpen, onClose, titles, children }) {
     }
 
     const payload = {
-      clientId: selectedClientId,
+      clientProfileId: client[0].clientProfile["id"],
+      trainerId: client[0].clientProfile["trainerId"],
       title,
       startDate,
       weeks,
     };
 
-    console.log("PROGRAM PAYLOAD:", payload);
-    alert("Dummy program created. Check console for payload.");
-  };
+    const program = await createProgram(payload);
 
-  const selectedClient = dummyClients.find((c) => c.id === selectedClientId);
+    console.log("PROGRAM PAYLOAD:", program);
+    alert("Program created!");
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -186,12 +186,15 @@ export function CreateProgramModal({ isOpen, onClose, titles, children }) {
             >
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text">Client</span>
+                  <span className="label-text text-lg text-black">
+                    Client:{" "}
+                  </span>
                 </label>
 
                 {client && (
-                  <span className="mt-1 text-xs text-base-content/60">
-                    Selected: {client[0].clientProfile['firstName']}
+                  <span className="mt-1 text-lg ">
+                    {" "}
+                    {client[0].clientProfile["firstName"]}
                   </span>
                 )}
               </div>
@@ -220,25 +223,6 @@ export function CreateProgramModal({ isOpen, onClose, titles, children }) {
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
-              </div>
-
-              <div className="md:col-span-3 flex justify-between items-center mt-4">
-                <div className="text-sm text-base-content/60">
-                  Weeks: {weeks.length}
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-outline btn-sm"
-                  onClick={handleAddWeek}
-                >
-                  + Add Week
-                </button>
-              </div>
-
-              <div className="md:col-span-3 flex justify-end mt-2">
-                <button type="submit" className="btn btn-primary">
-                  Create Program (dummy)
-                </button>
               </div>
 
               <div className="md:col-span-3 flex justify-between items-center mt-4">
@@ -350,7 +334,7 @@ export function CreateProgramModal({ isOpen, onClose, titles, children }) {
                                   )
                                 }
                               >
-                                {dummyExercises.map((ex) => (
+                                {exercises.map((ex) => (
                                   <option key={ex.id} value={ex.id}>
                                     {ex.name} ({ex.category})
                                   </option>

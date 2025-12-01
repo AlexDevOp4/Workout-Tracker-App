@@ -37,9 +37,54 @@ export async function getDayById(req, res) {
 
 // POST /api/days
 export const createDay = async (req, res) => {
-  const { weekId, dayNumber, rows } = req.body;
+  const {
+    weekId,
+    dayNumber,
+    rows,
+    clientProfileId,
+    trainerId,
+    title,
+    startDate,
+  } = req.body;
+
+  const parse = dateSchema.safeParse(req.body.startDate);
+  if (!parse.success)
+    return res.status(400).json({ message: parse.error.issues[0].message });
+
+  const dateStr = parse.data; // "2025-11-05"
+
+  const utcMidnight = DateTime.fromISO(dateStr, { zone: "UTC" })
+    .startOf("day")
+    .toJSDate();
 
   try {
+    const clientProfile = await prisma.clientProfile.findUniqueOrThrow({
+      where: {
+        id: clientProfileId,
+      },
+    });
+
+    const trainer = await prisma.user.findUniqueOrThrow({
+      where: {
+        id: trainerId,
+      },
+    });
+
+    if (clientProfile.id !== clientProfileId || trainer.role !== "TRAINER") {
+      return res.status(404).json({
+        error:
+          "Client Profile Id has to be present and only Trainers can create programs!",
+      });
+    }
+    const programCreated = await prisma.program.create({
+      data: {
+        clientId: clientProfileId,
+        trainerId,
+        startDate: utcMidnight,
+        status: "active",
+        title,
+      },
+    });
     const day = await prisma.day.create({
       data: {
         weekId,
