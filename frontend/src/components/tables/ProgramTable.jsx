@@ -1,25 +1,28 @@
 import { useEffect, useState } from "react";
-import { getPrograms } from "../../api/programs";
+import { getPrograms, softDeleteProgram } from "../../api/programs";
 import { getUserByClerkId } from "../../api/users";
 import { Link, useParams } from "react-router-dom";
+import { FaTrashCan, FaEye } from "react-icons/fa6";
 export default function ProgramTable() {
   const { clientId } = useParams();
   const [programs, setPrograms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchPrograms() {
-      try {
-        const userClerk = await getUserByClerkId(clientId);
-        const res = await getPrograms(userClerk[0].clientProfile["id"]);
-        console.log(res);
-        setPrograms(res || []); // fallback to empty array if undefined
-      } catch (error) {
-        console.error("Failed to fetch users:", error);
-      } finally {
-        setIsLoading(false);
-      }
+  const fetchPrograms = async () => {
+    try {
+      const userClerk = await getUserByClerkId(clientId);
+      const res = await getPrograms(userClerk[0].clientProfile["id"]);
+      const activePrograms = res.filter(
+        (program) => program.status === "active"
+      );
+      setPrograms(activePrograms || []);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+    } finally {
+      setIsLoading(false);
     }
+  };
+  useEffect(() => {
     fetchPrograms();
   }, []);
 
@@ -34,7 +37,7 @@ export default function ProgramTable() {
     <div>
       {" "}
       <div className="container mx-auto">
-        <ul className="list bg-base-100 rounded-box shadow-md mt-12">
+        <ul className="list bg-base-100 rounded-box shadow-md mt-8">
           {programs.length != null ? (
             programs.map((x) => (
               <li key={x.id} className="list-row">
@@ -51,9 +54,35 @@ export default function ProgramTable() {
                     key={x.id}
                     to={`/program/${x.id}`}
                   >
-                    View
+                    <FaEye />
                   </Link>
-              
+                </div>
+                <div>
+                  <button
+                    className="btn btn-square btn-ghost"
+                    onClick={async () => {
+                      const deleteProgram = confirm(
+                        `Would you like to delete ${x.title}?`
+                      );
+
+                      try {
+                        if (deleteProgram) {
+                          const programDelete = await softDeleteProgram(x.id);
+                          console.log(
+                            `Program ${x.title} successfully archived`,
+                            programDelete
+                          );
+                          alert(`Program ${x.title} has been deleted.`);
+                          fetchPrograms();
+                        }
+                      } catch (error) {
+                        console.log(error);
+                        alert(`Error Deleting ${x.title}!`);
+                      }
+                    }}
+                  >
+                    <FaTrashCan />
+                  </button>
                 </div>
               </li>
             ))

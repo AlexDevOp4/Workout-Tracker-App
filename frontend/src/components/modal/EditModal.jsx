@@ -16,7 +16,7 @@ export function EditModal({ isOpen, onClose, title }) {
     async function fetchUsers() {
       try {
         const res = await getUserByClerkId(clientId);
-        console.log(res)
+  
         setClient(res);
         if (res[0].clientProfile) {
           setFirstName(res[0].clientProfile["firstName"]);

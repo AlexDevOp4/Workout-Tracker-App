@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { getProgram } from "../../api/programs";
-import { getUserByClerkId } from "../../api/users";
-import { getExerciseById } from "../../api/exercises";
-import { Link, useParams } from "react-router-dom";
+import {  useParams } from "react-router-dom";
+import { FaPenToSquare } from "react-icons/fa6";
+
 
 export default function ProgramPage() {
   const { programId } = useParams();
@@ -36,12 +36,18 @@ export default function ProgramPage() {
       <div className="hero bg-base-100 shadow-sm">
         <div className="hero-content flex-col lg:flex-row justify-between w-full max-w-6xl">
           <div>
-            <h1 className="text-3xl font-bold">
-              {programs.title}
-              <span className="ml-2 badge badge-primary uppercase">
-                {programs.status}
-              </span>
-            </h1>
+            <div className="flex flex-row gap-3">
+              <FaPenToSquare className="text-lg mt-2" />
+              <h1 className="text-3xl font-bold">
+                {programs.title}
+                <span className="ml-2 h-8 badge badge-primary uppercase">
+                  {programs.status}
+                </span>
+              </h1>
+              {/* <FaPenToSquare className="text-lg"/> */}
+              {/* <button class="btn btn-sm btn-neutral border rounded-lg mt-1">Edit</button> */}
+            </div>
+
             <p className="mt-2 text-sm opacity-80">
               Client:{" "}
               <span className="font-semibold">

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { getUserByClerkId } from "../../api/users";
-import { getExercises } from "../../api/exercises";
-import { createProgram } from "../../api/programs";
+import { getUserByClerkId } from "../../../api/users";
+import { getExercises } from "../../../api/exercises";
+import { createProgram } from "../../../api/programs";
+import { FaTrashCan } from "react-icons/fa6";
 
 export function CreateProgramModal({ isOpen, onClose, titles }) {
   const [client, setClient] = useState([]);
@@ -25,7 +26,6 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
   const fetchExercises = async () => {
     try {
       const res = await getExercises();
-      console.log(res, "EXERCISES");
       setExercises(res);
     } catch (error) {
       console.error("Failed to fetch exercises:", error);
@@ -37,7 +37,6 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
   const fetchUsers = async () => {
     try {
       const res = await getUserByClerkId(titles);
-      console.log(res, "res");
       setClient(res || []);
     } catch (error) {
       console.error("Failed to fetch users:", error);
@@ -155,6 +154,17 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
     onClose();
   };
 
+  const removeItem = (indexToRemove) => {
+    setWeeks((prevItems) =>
+      prevItems
+        .filter((_, index) => index !== indexToRemove)
+        .map((week, idx) => ({
+          ...week,
+          weekNumber: idx + 1,
+        }))
+    );
+  };
+
   if (!isOpen) return null;
 
   if (isLoading) {
@@ -175,7 +185,6 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
           </button>
         </div>
 
-        {/* Top card: client + program meta */}
         <div className="card bg-base-100 shadow-lg">
           <div className="card-body">
             <h2 className="card-title">Program Details</h2>
@@ -199,7 +208,6 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
                 )}
               </div>
 
-              {/* Title */}
               <div className="form-control">
                 <label className="label">
                   <span className="label-text">Program title</span>
@@ -212,7 +220,6 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
                 />
               </div>
 
-              {/* Start date */}
               <div className="form-control">
                 <label className="label">
                   <span className="label-text">Start date</span>
@@ -240,20 +247,24 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
 
               <div className="md:col-span-3 flex justify-end mt-2">
                 <button type="submit" className="btn btn-primary">
-                  Create Program (dummy)
+                  Create Program
                 </button>
               </div>
             </form>
           </div>
         </div>
 
-        {/* Weeks / Days / Rows */}
         <div className="space-y-4">
           {weeks.map((week, weekIndex) => (
             <div key={week.weekNumber} className="card bg-base-100 shadow-md">
               <div className="card-body">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
+                    {week.weekNumber > 1 ? (
+                      <FaTrashCan onClick={() => removeItem(weekIndex)} />
+                    ) : (
+                      ""
+                    )}
                     <h2 className="card-title">Week {week.weekNumber}</h2>
                     <label className="label cursor-pointer flex items-center gap-2">
                       <span className="label-text text-sm">Deload</span>
@@ -314,7 +325,6 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
                             key={row.id}
                             className="grid grid-cols-1 md:grid-cols-6 gap-2 items-end bg-base-100 p-3 rounded-box"
                           >
-                            {/* Exercise select */}
                             <div className="form-control md:col-span-2">
                               <label className="label">
                                 <span className="label-text text-xs">
@@ -342,7 +352,6 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
                               </select>
                             </div>
 
-                            {/* Sets */}
                             <div className="form-control">
                               <label className="label">
                                 <span className="label-text text-xs">Sets</span>
@@ -363,7 +372,6 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
                               />
                             </div>
 
-                            {/* Weight */}
                             <div className="form-control">
                               <label className="label">
                                 <span className="label-text text-xs">
@@ -386,7 +394,6 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
                               />
                             </div>
 
-                            {/* Reps range */}
                             <div className="form-control">
                               <label className="label">
                                 <span className="label-text text-xs">
@@ -425,7 +432,6 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
                               </div>
                             </div>
 
-                            {/* RIR */}
                             <div className="form-control">
                               <label className="label">
                                 <span className="label-text text-xs">RIR</span>
@@ -446,7 +452,6 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
                               />
                             </div>
 
-                            {/* Rest */}
                             <div className="form-control">
                               <label className="label">
                                 <span className="label-text text-xs">
@@ -486,339 +491,5 @@ export function CreateProgramModal({ isOpen, onClose, titles }) {
         </div>
       </div>
     </div>
-
-    // <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4">
-    //   <div className="w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-base-200 rounded-box shadow-xl p-6 space-y-6">
-    //     <div className="flex items-center justify-between">
-    //       <h1 className="text-3xl font-bold">Trainer Program Builder</h1>
-
-    //       {/* Top card: client + program meta */}
-    //       <div className="card bg-base-100 shadow-lg">
-    //         <div className="card-body">
-    //           <div>
-    //             {" "}
-    //             <h2 className="card-title">Program Details</h2>
-    //           </div>
-
-    //           <form
-    //             className="grid grid-cols-1 md:grid-cols-3 gap-4"
-    //             onSubmit={handleSubmit}
-    //           >
-    //             {/* Client select */}
-    //             <div className="form-control">
-    //               <label className="label">
-    //                 <span className="label-text">Client</span>
-    //               </label>
-    //               <select
-    //                 className="select select-bordered"
-    //                 value={selectedClientId}
-    //                 onChange={(e) => setSelectedClientId(e.target.value)}
-    //               >
-    //                 <option value="">Select client</option>
-    //                 {dummyClients.map((client) => (
-    //                   <option key={client.id} value={client.id}>
-    //                     {client.name}
-    //                   </option>
-    //                 ))}
-    //               </select>
-    //               {selectedClient && (
-    //                 <span className="mt-1 text-xs text-base-content/60">
-    //                   Selected: {selectedClient.name}
-    //                 </span>
-    //               )}
-    //             </div>
-
-    //             {/* Title */}
-    //             <div className="form-control">
-    //               <label className="label">
-    //                 <span className="label-text">Program title</span>
-    //               </label>
-    //               <input
-    //                 type="text"
-    //                 className="input input-bordered"
-    //                 value={title}
-    //                 onChange={(e) => setTitle(e.target.value)}
-    //               />
-    //             </div>
-
-    //             {/* Start date */}
-    //             <div className="form-control">
-    //               <label className="label">
-    //                 <span className="label-text">Start date</span>
-    //               </label>
-    //               <input
-    //                 type="date"
-    //                 className="input input-bordered"
-    //                 value={startDate}
-    //                 onChange={(e) => setStartDate(e.target.value)}
-    //               />
-    //             </div>
-
-    //             <div className="md:col-span-3 flex justify-between items-center mt-4">
-    //               <div className="text-sm text-base-content/60">
-    //                 Weeks: {weeks.length}
-    //               </div>
-    //               <button
-    //                 type="button"
-    //                 className="btn btn-outline btn-sm"
-    //                 onClick={handleAddWeek}
-    //               >
-    //                 + Add Week
-    //               </button>
-    //             </div>
-
-    //             <div className="md:col-span-3 flex justify-end mt-2">
-    //               <button type="submit" className="btn btn-primary">
-    //                 Create Program (dummy)
-    //               </button>
-    //             </div>
-    //           </form>
-    //         </div>
-    //       </div>
-
-    //       {/* Weeks / Days / Rows */}
-    //       <div className="space-y-4">
-    //         {weeks.map((week, weekIndex) => (
-    //           <div key={week.weekNumber} className="card bg-base-100 shadow-md">
-    //             <div className="card-body">
-    //               <div className="flex justify-between items-center">
-    //                 <div className="flex items-center gap-3">
-    //                   <h2 className="card-title">Week {week.weekNumber}</h2>
-    //                   <label className="label cursor-pointer flex items-center gap-2">
-    //                     <span className="label-text text-sm">Deload</span>
-    //                     <input
-    //                       type="checkbox"
-    //                       className="toggle toggle-sm"
-    //                       checked={week.isDeload}
-    //                       onChange={() => handleToggleDeload(weekIndex)}
-    //                     />
-    //                   </label>
-    //                   {week.isDeload && (
-    //                     <span className="badge badge-warning badge-sm">
-    //                       Deload
-    //                     </span>
-    //                   )}
-    //                 </div>
-    //                 <button
-    //                   type="button"
-    //                   className="btn btn-outline btn-xs"
-    //                   onClick={() => handleAddDay(weekIndex)}
-    //                 >
-    //                   + Add Day
-    //                 </button>
-    //               </div>
-
-    //               <div className="divider my-2" />
-
-    //               <div className="space-y-4">
-    //                 {week.days.map((day, dayIndex) => (
-    //                   <div
-    //                     key={day.dayNumber}
-    //                     className="collapse collapse-arrow bg-base-200"
-    //                   >
-    //                     <input
-    //                       type="checkbox"
-    //                       defaultChecked={dayIndex === 0}
-    //                     />
-    //                     <div className="collapse-title font-medium">
-    //                       Day {day.dayNumber}{" "}
-    //                       <span className="text-xs text-base-content/60">
-    //                         ({day.rows.length} exercises)
-    //                       </span>
-    //                     </div>
-    //                     <div className="collapse-content space-y-3">
-    //                       <button
-    //                         type="button"
-    //                         className="btn btn-sm btn-outline mb-2"
-    //                         onClick={() => handleAddRow(weekIndex, dayIndex)}
-    //                       >
-    //                         + Add Exercise Row
-    //                       </button>
-
-    //                       {day.rows.length === 0 && (
-    //                         <p className="text-sm text-base-content/60">
-    //                           No exercises added yet.
-    //                         </p>
-    //                       )}
-
-    //                       {day.rows.map((row) => (
-    //                         <div
-    //                           key={row.id}
-    //                           className="grid grid-cols-1 md:grid-cols-6 gap-2 items-end bg-base-100 p-3 rounded-box"
-    //                         >
-    //                           {/* Exercise select */}
-    //                           <div className="form-control md:col-span-2">
-    //                             <label className="label">
-    //                               <span className="label-text text-xs">
-    //                                 Exercise
-    //                               </span>
-    //                             </label>
-    //                             <select
-    //                               className="select select-bordered select-sm"
-    //                               value={row.exerciseId}
-    //                               onChange={(e) =>
-    //                                 handleRowChange(
-    //                                   weekIndex,
-    //                                   dayIndex,
-    //                                   row.id,
-    //                                   "exerciseId",
-    //                                   e.target.value
-    //                                 )
-    //                               }
-    //                             >
-    //                               {dummyExercises.map((ex) => (
-    //                                 <option key={ex.id} value={ex.id}>
-    //                                   {ex.name} ({ex.category})
-    //                                 </option>
-    //                               ))}
-    //                             </select>
-    //                           </div>
-
-    //                           {/* Sets */}
-    //                           <div className="form-control">
-    //                             <label className="label">
-    //                               <span className="label-text text-xs">
-    //                                 Sets
-    //                               </span>
-    //                             </label>
-    //                             <input
-    //                               type="number"
-    //                               className="input input-bordered input-sm"
-    //                               value={row.sets}
-    //                               onChange={(e) =>
-    //                                 handleRowChange(
-    //                                   weekIndex,
-    //                                   dayIndex,
-    //                                   row.id,
-    //                                   "sets",
-    //                                   e.target.value
-    //                                 )
-    //                               }
-    //                             />
-    //                           </div>
-
-    //                           {/* Weight */}
-    //                           <div className="form-control">
-    //                             <label className="label">
-    //                               <span className="label-text text-xs">
-    //                                 Weight (lbs)
-    //                               </span>
-    //                             </label>
-    //                             <input
-    //                               type="number"
-    //                               className="input input-bordered input-sm"
-    //                               value={row.weightLbs}
-    //                               onChange={(e) =>
-    //                                 handleRowChange(
-    //                                   weekIndex,
-    //                                   dayIndex,
-    //                                   row.id,
-    //                                   "weightLbs",
-    //                                   e.target.value
-    //                                 )
-    //                               }
-    //                             />
-    //                           </div>
-
-    //                           {/* Reps range */}
-    //                           <div className="form-control">
-    //                             <label className="label">
-    //                               <span className="label-text text-xs">
-    //                                 Reps (min–max)
-    //                               </span>
-    //                             </label>
-    //                             <div className="flex gap-1">
-    //                               <input
-    //                                 type="number"
-    //                                 className="input input-bordered input-sm w-1/2"
-    //                                 value={row.targetRepsMin}
-    //                                 onChange={(e) =>
-    //                                   handleRowChange(
-    //                                     weekIndex,
-    //                                     dayIndex,
-    //                                     row.id,
-    //                                     "targetRepsMin",
-    //                                     e.target.value
-    //                                   )
-    //                                 }
-    //                               />
-    //                               <input
-    //                                 type="number"
-    //                                 className="input input-bordered input-sm w-1/2"
-    //                                 value={row.targetRepsMax}
-    //                                 onChange={(e) =>
-    //                                   handleRowChange(
-    //                                     weekIndex,
-    //                                     dayIndex,
-    //                                     row.id,
-    //                                     "targetRepsMax",
-    //                                     e.target.value
-    //                                   )
-    //                                 }
-    //                               />
-    //                             </div>
-    //                           </div>
-
-    //                           {/* RIR */}
-    //                           <div className="form-control">
-    //                             <label className="label">
-    //                               <span className="label-text text-xs">
-    //                                 RIR
-    //                               </span>
-    //                             </label>
-    //                             <input
-    //                               type="number"
-    //                               className="input input-bordered input-sm"
-    //                               value={row.rir}
-    //                               onChange={(e) =>
-    //                                 handleRowChange(
-    //                                   weekIndex,
-    //                                   dayIndex,
-    //                                   row.id,
-    //                                   "rir",
-    //                                   e.target.value
-    //                                 )
-    //                               }
-    //                             />
-    //                           </div>
-
-    //                           {/* Rest */}
-    //                           <div className="form-control">
-    //                             <label className="label">
-    //                               <span className="label-text text-xs">
-    //                                 Rest (sec)
-    //                               </span>
-    //                             </label>
-    //                             <input
-    //                               type="number"
-    //                               className="input input-bordered input-sm"
-    //                               value={row.restSec}
-    //                               onChange={(e) =>
-    //                                 handleRowChange(
-    //                                   weekIndex,
-    //                                   dayIndex,
-    //                                   row.id,
-    //                                   "restSec",
-    //                                   e.target.value
-    //                                 )
-    //                               }
-    //                             />
-    //                           </div>
-    //                         </div>
-    //                       ))}
-    //                     </div>
-    //                   </div>
-    //                 ))}
-    //               </div>
-    //             </div>
-    //           </div>
-    //         ))}
-    //       </div>
-    //       <button onClick={onClose} className="btn bg-gray-200">
-    //         Close
-    //       </button>
-    //     </div>
-    //   </div>
-    // </div>
   );
 }

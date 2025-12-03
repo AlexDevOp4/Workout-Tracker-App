@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { FaPenToSquare } from "react-icons/fa6";
-import { FaTrashCan } from "react-icons/fa6";
-import { FaC } from "react-icons/fa6";
+import { FaTrashCan, FaC, FaEye } from "react-icons/fa6";
 import { EditModal } from "../../components/modal/EditModal";
 import { getUserByClerkId } from "../../api/users";
 import { DeleteModal } from "../../components/modal/DeleteModal";
 import ProgramTable from "../../components/tables/ProgramTable";
-import { CreateProgramModal } from "../../components/modal/CreateProgramModal";
+import { CreateProgramModal } from "../../components/modal/Programs/CreateProgramModal";
 
 export default function ClientPage() {
   const { clientId } = useParams();
@@ -149,10 +148,8 @@ export default function ClientPage() {
           </li>
         )}
       </ul>
-      <button
-        className="btn btn-square btn-ghost"
-        onClick={openCreateProgramModal}
-      >
+
+      <button onClick={openCreateProgramModal} className="btn btn-neutral mt-8">
         Create Program
       </button>
       <CreateProgramModal
