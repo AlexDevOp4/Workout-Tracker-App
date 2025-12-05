@@ -213,7 +213,7 @@ export default function ProgramPage() {
                                   {isEdit ? (
                                     <td className="whitespace-nowrap">
                                       <select
-                                        className="select select-bordered select-sm"
+                                        className="select select-bordered select-xs"
                                         value={row.exerciseId}
                                         onChange={(e) =>
                                           handleRowChange(
@@ -234,20 +234,89 @@ export default function ProgramPage() {
                                       {r.exercise.name}
                                     </td>
                                   )}
+                                  {isEdit ? (
+                                    <td className="text-center">
+                                      <input
+                                        type="number"
+                                        placeholder={r.sets}
+                                        className="input w-12 text-center input-sm"
+                                      />
+                                    </td>
+                                  ) : (
+                                    <td className="text-center">{r.sets}</td>
+                                  )}
+                                  {isEdit ? (
+                                    <td className="text-center">
+                                      <input
+                                        type="number"
+                                        placeholder={`${r.targetRepsMin}`}
+                                        className="input w-10 text-center input-sm"
+                                      />
+                                      -
+                                      <input
+                                        type="number"
+                                        placeholder={`${r.targetRepsMax}`}
+                                        className="input w-11 text-center input-sm"
+                                      />
+                                    </td>
+                                  ) : (
+                                    <td className="text-center">
+                                      {r.targetRepsMin} - {r.targetRepsMax}
+                                    </td>
+                                  )}
 
-                                  <td className="text-center">{r.sets}</td>
-                                  <td className="text-center">
-                                    {r.targetRepsMin} - {r.targetRepsMax}
-                                  </td>
-                                  <td className="text-center">{r.rir}</td>
-                                  <td className="text-center">{r.weightLbs}</td>
-                                  <td className="text-center">{r.restSec}</td>
+                                  {isEdit ? (
+                                    <td className="text-center">
+                                      <input
+                                        type="number"
+                                        placeholder={`${r.rir}`}
+                                        className="input w-12 text-center input-sm"
+                                      />
+                                    </td>
+                                  ) : (
+                                    <td className="text-center">{r.rir}</td>
+                                  )}
+
+                                  {isEdit ? (
+                                    <td className="text-center">
+                                      <input
+                                        type="number"
+                                        placeholder={r.weightLbs}
+                                        className="input w-14 text-center input-sm"
+                                      />
+                                    </td>
+                                  ) : (
+                                    <td className="text-center">
+                                      {r.weightLbs}
+                                    </td>
+                                  )}
+
+                                  {isEdit ? (
+                                    <td className="text-center">
+                                      <input
+                                        type="number"
+                                        placeholder={r.restSec}
+                                        className="input w-12 text-center input-sm"
+                                      />
+                                    </td>
+                                  ) : (
+                                    <td className="text-center ">
+                                      {r.restSec}
+                                    </td>
+                                  )}
                                 </tr>
                               ))}
                             </tbody>
                           </table>
                         </div>
                       </div>
+                      {isEdit && (
+                        <div className="flex justify-end  m-4">
+                          <button className="btn btn-soft btn-xs md:btn-sm">
+                            Save
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
 
