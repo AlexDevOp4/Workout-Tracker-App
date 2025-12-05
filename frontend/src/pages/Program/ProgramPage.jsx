@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { getProgram } from "../../api/programs";
 import { useParams } from "react-router-dom";
-import { FaPenToSquare } from "react-icons/fa6";
+import { FaPenToSquare, FaTrashCan } from "react-icons/fa6";
 import { getExercises } from "../../api/exercises";
+import { deleteRow } from "../../api/rows";
 
 export default function ProgramPage() {
   const { programId } = useParams();
@@ -27,21 +28,20 @@ export default function ProgramPage() {
     setIsEdit((prev) => !prev);
   };
 
-  useEffect(() => {
-    async function fetchPrograms() {
-      try {
-        const res = await getProgram(programId);
-        const exercises = await getExercises();
-        setPrograms(res || []); // fallback to empty array if undefined
-        setExercise(exercises);
-        console.log(res, "res");
-      } catch (error) {
-        console.error("Failed to fetch users:", error);
-      } finally {
-        setIsLoading(false);
-      }
+  const fetchPrograms = async () => {
+    try {
+      const res = await getProgram(programId);
+      const exercises = await getExercises();
+      setPrograms(res || []); // fallback to empty array if undefined
+      setExercise(exercises);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchPrograms();
   }, []);
 
@@ -165,7 +165,7 @@ export default function ProgramPage() {
 
           {/* Week details */}
           <main className="lg:col-span-3 space-y-4">
-            {programs.weeks.map((week, i) => (
+            {programs.weeks.map((week) => (
               <div
                 key={week.id}
                 className="collapse collapse-arrow bg-base-100 shadow-md"
@@ -185,7 +185,10 @@ export default function ProgramPage() {
 
                 <div className="collapse-content space-y-4">
                   {week.days.map((row, index) => (
-                    <div className="card bg-base-100 border border-base-300">
+                    <div
+                      className="card bg-base-100 border border-base-300"
+                      key={index}
+                    >
                       <div className="card-body p-4">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
                           <div>
@@ -205,6 +208,7 @@ export default function ProgramPage() {
                                 <th className="text-center">RIR</th>
                                 <th className="text-center">Weight (lbs)</th>
                                 <th className="text-center">Rest (sec)</th>
+                                {isEdit && <th></th>}
                               </tr>
                             </thead>
                             <tbody>
@@ -302,6 +306,29 @@ export default function ProgramPage() {
                                   ) : (
                                     <td className="text-center ">
                                       {r.restSec}
+                                    </td>
+                                  )}
+
+                                  {isEdit && (
+                                    <td className="text-center ">
+                                      <FaTrashCan
+                                        onClick={async () => {
+                                          try {
+                                            const confirmDelete = confirm(
+                                              "Are you sure you want to delete this row (action cannot be undone)"
+                                            );
+
+                                            if (confirmDelete) {
+                                              alert("Row Deleted!");
+                                              await deleteRow(r.id);
+                                              toggleEdit();
+                                              fetchPrograms();
+                                            }
+                                          } catch (error) {
+                                            console.log(error);
+                                          }
+                                        }}
+                                      />
                                     </td>
                                   )}
                                 </tr>
