@@ -218,10 +218,14 @@ export const updateProgram = async (req, res) => {
   const programId = req.params.id;
   const title = req.body.title?.toString().trim();
   const statusRaw = req.body.status?.toString().trim();
+  const { weeks, days } = req.body;
+  console.log(weeks);
 
   const payload = {};
 
   if (title) payload.title = title;
+
+  if (weeks) payload.weeks = weeks;
 
   if (statusRaw && statusRaw.toLowerCase() !== "all") {
     const allowed = new Set(["active", "completed", "archived"]);
@@ -231,11 +235,48 @@ export const updateProgram = async (req, res) => {
   }
 
   try {
-    const programUpdated = await prisma.program.update({
+    const programUpdated = await prisma.program.updateMany({
       where: {
         id: programId,
       },
-      data: payload,
+      data: {
+        title,
+        weeks: {
+          update: weeks.map((week) => ({
+            where: {
+              id: week.id,
+            },
+            data: {
+              isDeload: weeks.isDeload ?? false,
+
+              days: {
+                update: week.days.map((day) => ({
+                  where: { id: day.id },
+                  data: {
+                    dayNumber: day.dayNumber,
+
+                    rows: {
+                      update: day.rows.map((row) => ({
+                        where: { id: row.id },
+                        data: {
+                          sets: row.sets,
+                          weightLbs: row.weightLbs,
+                          targetRepsMin: row.targetRepsMin,
+                          targetRepsMax: row.targetRepsMax,
+                          rir: row.rir,
+                          restSec: row.restSec,
+                          actualReps: row.actualReps ?? [],
+                          notes: row.notes ?? null,
+                        },
+                      })),
+                    },
+                  },
+                })),
+              },
+            },
+          })),
+        },
+      },
     });
 
     return res.status(200).json(programUpdated);

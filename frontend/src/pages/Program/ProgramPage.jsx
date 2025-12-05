@@ -1,27 +1,73 @@
 import { useEffect, useState } from "react";
 import { getProgram } from "../../api/programs";
-import {  useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { FaPenToSquare } from "react-icons/fa6";
-
+import { getExercises } from "../../api/exercises";
 
 export default function ProgramPage() {
   const { programId } = useParams();
   const [programs, setPrograms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [exercise, setExercise] = useState([]);
+  const [isEdit, setIsEdit] = useState(false);
+  const [weeks, setWeeks] = useState([
+    {
+      weekNumber: 1,
+      isDeload: false,
+      days: [
+        {
+          dayNumber: 1,
+          rows: [],
+        },
+      ],
+    },
+  ]);
+
+  const toggleEdit = () => {
+    setIsEdit((prev) => !prev);
+  };
 
   useEffect(() => {
     async function fetchPrograms() {
       try {
         const res = await getProgram(programId);
+        const exercises = await getExercises();
         setPrograms(res || []); // fallback to empty array if undefined
+        setExercise(exercises);
+        console.log(res, "res");
       } catch (error) {
         console.error("Failed to fetch users:", error);
       } finally {
         setIsLoading(false);
       }
     }
+
     fetchPrograms();
   }, []);
+
+  const handleRowChange = (weekIndex, dayIndex, rowId, field, value) => {
+    setWeeks((prev) => {
+      const updated = [...prev];
+      const day = updated[weekIndex].days[dayIndex];
+      day.rows = day.rows.map((row) =>
+        row.id === rowId
+          ? {
+              ...row,
+              [field]:
+                field === "sets" ||
+                field === "weightLbs" ||
+                field === "targetRepsMin" ||
+                field === "targetRepsMax" ||
+                field === "rir" ||
+                field === "restSec"
+                  ? Number(value)
+                  : value,
+            }
+          : row
+      );
+      return updated;
+    });
+  };
 
   if (isLoading) {
     return (
@@ -37,15 +83,16 @@ export default function ProgramPage() {
         <div className="hero-content flex-col lg:flex-row justify-between w-full max-w-6xl">
           <div>
             <div className="flex flex-row gap-3">
-              <FaPenToSquare className="text-lg mt-2" />
+              <FaPenToSquare
+                onClick={() => toggleEdit()}
+                className="text-lg mt-2"
+              />
               <h1 className="text-3xl font-bold">
                 {programs.title}
                 <span className="ml-2 h-8 badge badge-primary uppercase">
                   {programs.status}
                 </span>
               </h1>
-              {/* <FaPenToSquare className="text-lg"/> */}
-              {/* <button class="btn btn-sm btn-neutral border rounded-lg mt-1">Edit</button> */}
             </div>
 
             <p className="mt-2 text-sm opacity-80">
@@ -137,38 +184,57 @@ export default function ProgramPage() {
                 </div>
 
                 <div className="collapse-content space-y-4">
-                  {week.days.map((row) =>
-                    row.rows.map((r) => (
-                      <div
-                        key={r.id}
-                        className="card bg-base-100 border border-base-300"
-                      >
-                        <div className="card-body p-4">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
-                            <div>
-                              <h3 className="font-semibold text-sm">
-                                Day {row.dayNumber}
-                              </h3>
-                            </div>
-                            <div className="mt-2 md:mt-0"></div>
+                  {week.days.map((row, index) => (
+                    <div className="card bg-base-100 border border-base-300">
+                      <div className="card-body p-4">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
+                          <div>
+                            <h3 className="font-semibold text-sm">
+                              Day {index + 1}
+                            </h3>
                           </div>
-                          <div className="overflow-x-auto">
-                            <table className="table table-sm">
-                              <thead>
-                                <tr className="text-xs uppercase">
-                                  <th>Exercise</th>
-                                  <th className="text-center">Sets</th>
-                                  <th className="text-center">Target Reps</th>
-                                  <th className="text-center">RIR</th>
-                                  <th className="text-center">Weight (lbs)</th>
-                                  <th className="text-center">Rest (sec)</th>
-                                </tr>
-                              </thead>
-                              <tbody>
+                          <div className="mt-2 md:mt-0"></div>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="table table-sm">
+                            <thead>
+                              <tr className="text-xs uppercase">
+                                <th>Exercise</th>
+                                <th className="text-center">Sets</th>
+                                <th className="text-center">Target Reps</th>
+                                <th className="text-center">RIR</th>
+                                <th className="text-center">Weight (lbs)</th>
+                                <th className="text-center">Rest (sec)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {row.rows.map((r) => (
                                 <tr key={r.id}>
-                                  <td className="whitespace-nowrap">
-                                    {r.exercise.name}
-                                  </td>
+                                  {isEdit ? (
+                                    <td className="whitespace-nowrap">
+                                      <select
+                                        className="select select-bordered select-sm"
+                                        value={row.exerciseId}
+                                        onChange={(e) =>
+                                          handleRowChange(
+                                            row.id,
+                                            "exerciseId",
+                                            e.target.value
+                                          )
+                                        }
+                                      >
+                                        <option key={r.id} value={r.id}>
+                                          {r.exercise.name} (
+                                          {r.exercise.category})
+                                        </option>
+                                      </select>
+                                    </td>
+                                  ) : (
+                                    <td className="whitespace-nowrap">
+                                      {r.exercise.name}
+                                    </td>
+                                  )}
+
                                   <td className="text-center">{r.sets}</td>
                                   <td className="text-center">
                                     {r.targetRepsMin} - {r.targetRepsMax}
@@ -177,13 +243,13 @@ export default function ProgramPage() {
                                   <td className="text-center">{r.weightLbs}</td>
                                   <td className="text-center">{r.restSec}</td>
                                 </tr>
-                              </tbody>
-                            </table>
-                          </div>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
-                    ))
-                  )}
+                    </div>
+                  ))}
 
                   {week.days.length === 0 && (
                     <p className="text-sm opacity-70 italic">

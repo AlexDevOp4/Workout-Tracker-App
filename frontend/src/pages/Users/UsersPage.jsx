@@ -10,14 +10,16 @@ export default function UsersPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function fetchUsers() {
       try {
         const res = await getUsers();
         setUsers(res.users || []); // fallback to empty array if undefined
-      } catch (error) {
-        console.error("Failed to fetch users:", error);
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+        setError(err);
       } finally {
         setIsLoading(false);
       }
@@ -37,13 +39,15 @@ export default function UsersPage() {
         lastName,
       });
       setUsers((prev) => [...prev, newUser.user]);
-      setFirstName("")
-      setLastName("")
+      setFirstName("");
+      setLastName("");
       setEmail("");
       setUserName("");
       setPassword("");
-    } catch (error) {
-      console.error("Failed to create user:", error);
+      alert(`${firstName} ${lastName} was successfully created!`);
+    } catch (err) {
+      console.error("Failed to create user:", err);
+      setError(err);
     }
   }
 
@@ -51,6 +55,14 @@ export default function UsersPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-gray-700 text-lg font-medium">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-gray-700 text-lg font-medium">{error}</div>
       </div>
     );
   }
@@ -126,11 +138,21 @@ export default function UsersPage() {
         </form>
 
         <ul className="mt-8 divide-y divide-gray-200">
-          {users.map((u) => (
-            <li key={u.id} className="py-2 text-gray-700">
-              <span className="font-medium">{u.email}</span> — {u.role}
-            </li>
-          ))}
+          <div
+            tabIndex={0}
+            className="collapse collapse-arrow bg-base-100 border-base-300 border"
+          >
+            <div className="collapse-title font-semibold text-center">
+              Users
+            </div>
+            <div className="collapse-content text-sm">
+              {users.map((u) => (
+                <li key={u.id} className="py-2 text-gray-700 text-sm ">
+                  <span className="font-medium text-sm">{u.email}</span>
+                </li>
+              ))}
+            </div>
+          </div>
         </ul>
       </div>
     </div>
