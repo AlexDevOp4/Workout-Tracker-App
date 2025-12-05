@@ -1,15 +1,24 @@
 import { useEffect, useState } from "react";
 import { getProgram } from "../../api/programs";
 import { useParams } from "react-router-dom";
-import { FaPenToSquare, FaTrashCan } from "react-icons/fa6";
+import { FaPenToSquare, FaTrashCan, FaFloppyDisk } from "react-icons/fa6";
 import { getExercises } from "../../api/exercises";
-import { deleteRow } from "../../api/rows";
+import { deleteRow, updateRow } from "../../api/rows";
 
 export default function ProgramPage() {
   const { programId } = useParams();
   const [programs, setPrograms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [exercise, setExercise] = useState([]);
+
+  const [exercises, setExercises] = useState([]);
+  const [exercise, setExercise] = useState("");
+  const [sets, setSets] = useState();
+  const [repsMin, setRepsMin] = useState(0);
+  const [repsMax, setRepsMax] = useState(0);
+  const [rir, setRir] = useState(0);
+  const [weightLb, setWeightLb] = useState(0);
+  const [rest, setRest] = useState(0);
+
   const [isEdit, setIsEdit] = useState(false);
   const [weeks, setWeeks] = useState([
     {
@@ -31,9 +40,10 @@ export default function ProgramPage() {
   const fetchPrograms = async () => {
     try {
       const res = await getProgram(programId);
-      const exercises = await getExercises();
+      const exerciseData = await getExercises();
+      console.log(exerciseData, "ex");
       setPrograms(res || []); // fallback to empty array if undefined
-      setExercise(exercises);
+      setExercises(exerciseData);
     } catch (error) {
       console.error("Failed to fetch users:", error);
     } finally {
@@ -45,28 +55,10 @@ export default function ProgramPage() {
     fetchPrograms();
   }, []);
 
-  const handleRowChange = (weekIndex, dayIndex, rowId, field, value) => {
-    setWeeks((prev) => {
-      const updated = [...prev];
-      const day = updated[weekIndex].days[dayIndex];
-      day.rows = day.rows.map((row) =>
-        row.id === rowId
-          ? {
-              ...row,
-              [field]:
-                field === "sets" ||
-                field === "weightLbs" ||
-                field === "targetRepsMin" ||
-                field === "targetRepsMax" ||
-                field === "rir" ||
-                field === "restSec"
-                  ? Number(value)
-                  : value,
-            }
-          : row
-      );
-      return updated;
-    });
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const data = { exercise, sets, repsMin, repsMax, rir, weightLb, rest };
+    console.log(data);
   };
 
   if (isLoading) {
@@ -78,7 +70,6 @@ export default function ProgramPage() {
   }
   return (
     <div className="min-h-screen bg-base-200">
-      {/* Header */}
       <div className="hero bg-base-100 shadow-sm">
         <div className="hero-content flex-col lg:flex-row justify-between w-full max-w-6xl">
           <div>
@@ -130,10 +121,8 @@ export default function ProgramPage() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="max-w-6xl mx-auto py-6 px-4 lg:px-0">
         <div className="grid lg:grid-cols-4 gap-4">
-          {/* Week list (side) */}
           <aside className="lg:col-span-1">
             <div className="card bg-base-100 shadow-md">
               <div className="card-body">
@@ -163,7 +152,6 @@ export default function ProgramPage() {
             </div>
           </aside>
 
-          {/* Week details */}
           <main className="lg:col-span-3 space-y-4">
             {programs.weeks.map((week) => (
               <div
@@ -185,166 +173,215 @@ export default function ProgramPage() {
 
                 <div className="collapse-content space-y-4">
                   {week.days.map((row, index) => (
-                    <div
-                      className="card bg-base-100 border border-base-300"
-                      key={index}
-                    >
-                      <div className="card-body p-4">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
-                          <div>
-                            <h3 className="font-semibold text-sm">
-                              Day {index + 1}
-                            </h3>
+                    <form onSubmit={handleSubmit}>
+                      <div
+                        className="card bg-base-100 border border-base-300"
+                        key={index}
+                      >
+                        <div className="card-body p-4">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
+                            <div>
+                              <h3 className="font-semibold text-sm">
+                                Day {index + 1}
+                              </h3>
+                            </div>
+                            <div className="mt-2 md:mt-0"></div>
                           </div>
-                          <div className="mt-2 md:mt-0"></div>
-                        </div>
-                        <div className="overflow-x-auto">
-                          <table className="table table-sm">
-                            <thead>
-                              <tr className="text-xs uppercase">
-                                <th>Exercise</th>
-                                <th className="text-center">Sets</th>
-                                <th className="text-center">Target Reps</th>
-                                <th className="text-center">RIR</th>
-                                <th className="text-center">Weight (lbs)</th>
-                                <th className="text-center">Rest (sec)</th>
-                                {isEdit && <th></th>}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {row.rows.map((r) => (
-                                <tr key={r.id}>
-                                  {isEdit ? (
-                                    <td className="whitespace-nowrap">
-                                      <select
-                                        className="select select-bordered select-xs"
-                                        value={row.exerciseId}
-                                        onChange={(e) =>
-                                          handleRowChange(
-                                            row.id,
-                                            "exerciseId",
-                                            e.target.value
-                                          )
-                                        }
-                                      >
-                                        <option key={r.id} value={r.id}>
-                                          {r.exercise.name} (
-                                          {r.exercise.category})
-                                        </option>
-                                      </select>
-                                    </td>
-                                  ) : (
-                                    <td className="whitespace-nowrap">
-                                      {r.exercise.name}
-                                    </td>
-                                  )}
-                                  {isEdit ? (
-                                    <td className="text-center">
-                                      <input
-                                        type="number"
-                                        placeholder={r.sets}
-                                        className="input w-12 text-center input-sm"
-                                      />
-                                    </td>
-                                  ) : (
-                                    <td className="text-center">{r.sets}</td>
-                                  )}
-                                  {isEdit ? (
-                                    <td className="text-center">
-                                      <input
-                                        type="number"
-                                        placeholder={`${r.targetRepsMin}`}
-                                        className="input w-10 text-center input-sm"
-                                      />
-                                      -
-                                      <input
-                                        type="number"
-                                        placeholder={`${r.targetRepsMax}`}
-                                        className="input w-11 text-center input-sm"
-                                      />
-                                    </td>
-                                  ) : (
-                                    <td className="text-center">
-                                      {r.targetRepsMin} - {r.targetRepsMax}
-                                    </td>
-                                  )}
-
-                                  {isEdit ? (
-                                    <td className="text-center">
-                                      <input
-                                        type="number"
-                                        placeholder={`${r.rir}`}
-                                        className="input w-12 text-center input-sm"
-                                      />
-                                    </td>
-                                  ) : (
-                                    <td className="text-center">{r.rir}</td>
-                                  )}
-
-                                  {isEdit ? (
-                                    <td className="text-center">
-                                      <input
-                                        type="number"
-                                        placeholder={r.weightLbs}
-                                        className="input w-14 text-center input-sm"
-                                      />
-                                    </td>
-                                  ) : (
-                                    <td className="text-center">
-                                      {r.weightLbs}
-                                    </td>
-                                  )}
-
-                                  {isEdit ? (
-                                    <td className="text-center">
-                                      <input
-                                        type="number"
-                                        placeholder={r.restSec}
-                                        className="input w-12 text-center input-sm"
-                                      />
-                                    </td>
-                                  ) : (
-                                    <td className="text-center ">
-                                      {r.restSec}
-                                    </td>
-                                  )}
-
-                                  {isEdit && (
-                                    <td className="text-center ">
-                                      <FaTrashCan
-                                        onClick={async () => {
-                                          try {
-                                            const confirmDelete = confirm(
-                                              "Are you sure you want to delete this row (action cannot be undone)"
-                                            );
-
-                                            if (confirmDelete) {
-                                              alert("Row Deleted!");
-                                              await deleteRow(r.id);
-                                              toggleEdit();
-                                              fetchPrograms();
-                                            }
-                                          } catch (error) {
-                                            console.log(error);
-                                          }
-                                        }}
-                                      />
-                                    </td>
-                                  )}
+                          <div className="overflow-x-auto">
+                            <table className="table table-sm">
+                              <thead>
+                                <tr className="text-xs uppercase">
+                                  <th>Exercise</th>
+                                  <th className="text-center">Sets</th>
+                                  <th className="text-center">Target Reps</th>
+                                  <th className="text-center">RIR</th>
+                                  <th className="text-center">Weight (lbs)</th>
+                                  <th className="text-center">Rest (sec)</th>
+                                  {isEdit && <th></th>}
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                              </thead>
+                              <tbody>
+                                {row.rows.map((r) => (
+                                  <tr key={r.id}>
+                                    {isEdit ? (
+                                      <td className="whitespace-nowrap">
+                                        <select
+                                          className="select select-bordered select-xs"
+                                          value={row.exerciseId}
+                                          onChange={(e) =>
+                                            setExercise(e.target.value)
+                                          }
+                                        >
+                                          {exercises.map((e) => (
+                                            <option key={e.id} value={e.id}>
+                                              {e.name} ({e.category})
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </td>
+                                    ) : (
+                                      <td className="whitespace-nowrap">
+                                        {r.exercise.name}
+                                      </td>
+                                    )}
+                                    {isEdit ? (
+                                      <td className="text-center">
+                                        <input
+                                          type="number"
+                                          onChange={(e) =>
+                                            setSets(e.target.value)
+                                          }
+                                          placeholder={r.sets}
+                                          className="input w-12 text-center input-sm"
+                                        />
+                                      </td>
+                                    ) : (
+                                      <td className="text-center">{r.sets}</td>
+                                    )}
+                                    {isEdit ? (
+                                      <td className="text-center flex justify-center items-center">
+                                        <input
+                                          type="number"
+                                          onChange={(e) =>
+                                            setRepsMin(e.target.value)
+                                          }
+                                          placeholder={`${r.targetRepsMin}`}
+                                          className="input w-10 text-center input-sm"
+                                        />
+                                        -
+                                        <input
+                                          type="number"
+                                          onChange={(e) =>
+                                            setRepsMax(e.target.value)
+                                          }
+                                          placeholder={`${r.targetRepsMax}`}
+                                          className="input w-11 text-center input-sm"
+                                        />
+                                      </td>
+                                    ) : (
+                                      <td className="text-center">
+                                        {r.targetRepsMin} - {r.targetRepsMax}
+                                      </td>
+                                    )}
+
+                                    {isEdit ? (
+                                      <td className="text-center">
+                                        <input
+                                          type="number"
+                                          onChange={(e) =>
+                                            setRir(e.target.value)
+                                          }
+                                          placeholder={`${r.rir}`}
+                                          className="input w-12 text-center input-sm"
+                                        />
+                                      </td>
+                                    ) : (
+                                      <td className="text-center">{r.rir}</td>
+                                    )}
+
+                                    {isEdit ? (
+                                      <td className="text-center">
+                                        <input
+                                          type="number"
+                                          onChange={(e) =>
+                                            setWeightLb(e.target.value)
+                                          }
+                                          placeholder={r.weightLbs}
+                                          className="input w-14 text-center input-sm"
+                                        />
+                                      </td>
+                                    ) : (
+                                      <td className="text-center">
+                                        {r.weightLbs}
+                                      </td>
+                                    )}
+
+                                    {isEdit ? (
+                                      <td className="text-center">
+                                        <input
+                                          type="number"
+                                          onChange={(e) =>
+                                            setRest(e.target.value)
+                                          }
+                                          placeholder={r.restSec}
+                                          className="input w-12 text-center input-sm"
+                                        />
+                                      </td>
+                                    ) : (
+                                      <td className="text-center ">
+                                        {r.restSec}
+                                      </td>
+                                    )}
+
+                                    {isEdit && (
+                                      <td className="text-center flex gap-2 justify-center items-center mt-2  ">
+                                        <FaTrashCan
+                                          className="text-lg"
+                                          onClick={async () => {
+                                            try {
+                                              const confirmDelete = confirm(
+                                                "Are you sure you want to delete this row (action cannot be undone)"
+                                              );
+
+                                              if (confirmDelete) {
+                                                alert("Row Deleted!");
+                                                await deleteRow(r.id);
+                                                toggleEdit();
+                                                fetchPrograms();
+                                              }
+                                            } catch (error) {
+                                              console.log(error);
+                                            }
+                                          }}
+                                        />
+
+                                        <FaFloppyDisk
+                                          className="text-lg"
+                                          onClick={async () => {
+                                            const data = {
+                                              exercise,
+                                              sets,
+                                              targetRepsMin: repsMin,
+                                              targetRepsMax: repsMax,
+                                              rir,
+                                              weightLbs: weightLb,
+                                              restSec: rest,
+                                            };
+                                            try {
+                                              const confirmUpdate =
+                                                confirm("Save Changes?");
+
+                                              if (confirmUpdate) {
+                                                alert("Row Updated!");
+                                                await updateRow(r.id, data);
+                                                toggleEdit();
+                                                fetchPrograms();
+                                              }
+                                            } catch (error) {
+                                              console.log(error);
+                                            }
+                                          }}
+                                        />
+                                      </td>
+                                    )}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
+                        {isEdit && (
+                          <div className="flex justify-end  m-4">
+                            <button
+                              type="submit"
+                              className="btn btn-soft btn-xs md:btn-sm"
+                            >
+                              Save
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      {isEdit && (
-                        <div className="flex justify-end  m-4">
-                          <button className="btn btn-soft btn-xs md:btn-sm">
-                            Save
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    </form>
                   ))}
 
                   {week.days.length === 0 && (

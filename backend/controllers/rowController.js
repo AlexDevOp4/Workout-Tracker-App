@@ -113,13 +113,14 @@ export const getRow = async (req, res) => {
 
 // PATCH /api/rows/:id
 export const updateRow = async (req, res) => {
+  console.log('hit')
   const id = req.params.id;
   if (!id) return res.status(400).json({ message: `Id is required` });
 
   const {
     weekId,
     dayNumber,
-    exercise,
+    exerciseId,
     sets,
     weightLbs,
     targetRepsMin,
@@ -134,7 +135,7 @@ export const updateRow = async (req, res) => {
 
   // Strings
   if (weekId !== undefined) payload.weekId = String(weekId).trim();
-  if (exercise !== undefined) payload.exercise = String(exercise).trim();
+  if (exerciseId !== undefined) payload.exerciseId = String(exerciseId).trim();
   if (notes !== undefined) payload.notes = String(notes);
 
   // Integers
@@ -167,7 +168,7 @@ export const updateRow = async (req, res) => {
     });
     return res.status(200).json(row);
   } catch (error) {
-    return res.status(500).json({ error: "Failed to fetching row: " + error });
+    return res.status(500).json({ error: "Failed to updating row: " + error });
   }
 };
 
